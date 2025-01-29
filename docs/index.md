@@ -11,7 +11,9 @@ Este proyecto no es un sistema completo de picking, sólo implementa la determin
 - implementación del servidor de coordenadas en una PC
 - programación del robot para obtener las coordenadas y proceder al picking
 
+El documento [Pick & place IA](https://docs.google.com/document/d/1cnP3_vzlprbpmIYp5Z6eIvfE33E94nwcogm0QQsAR48/edit?tab=t.0#heading=h.6jynaot9cbnq) contiene la bitácora de instalación y pruebas con U2Net, y los fundamentos para el análisis de componente principal para la determinación de los puntos de agarre.
 
+Ese documento profundiza en los principios de funcionamiento, pero no aborda el modo de uso de la biblioteca, que se explica más abajo.
 
 # U2Net
 <img src="assets/U2Net.png">
@@ -35,7 +37,8 @@ Clonar el repositorio e instalar las dependencias, usualmente en un entorno virt
     git clone https://github.com/Laboratorio-de-Robotica/Picking-U2Net
 
 El repositorio contiene el modelo liviano u2netp.
-El modelo pesado u2net se puede descargar del repositorio de u2net, y de [u2net.pth](https://drive.google.com/file/d/1ye5EcsqVgEQXQQulGK17Mw5XDaDNquZt/view?usp=drive_link) (176 Mb).
+El modelo pesado **u2net.pth** se puede descargar del repositorio de u2net, o directamente de [u2net.pth](https://drive.google.com/file/d/1ye5EcsqVgEQXQQulGK17Mw5XDaDNquZt/view?usp=drive_link) (176 Mb).
+
 El archivo descargado se debe colocar en la carpeta **model**.
 
 # Dependencias
