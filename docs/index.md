@@ -32,7 +32,11 @@ El sistema sólo considera contornos externos y tiene mucho espacio para la mejo
 # Instalación
 Clonar el repositorio e instalar las dependencias, usualmente en un entorno virtual.
 
-    git clone 
+    git clone https://github.com/Laboratorio-de-Robotica/Picking-U2Net
+
+El repositorio contiene el modelo liviano u2netp.
+El modelo pesado u2net se puede descargar del repositorio de u2net, y de [u2net.pth](https://drive.google.com/file/d/1ye5EcsqVgEQXQQulGK17Mw5XDaDNquZt/view?usp=drive_link) (176 Mb).
+El archivo descargado se debe colocar en la carpeta **model**.
 
 # Dependencias
 
