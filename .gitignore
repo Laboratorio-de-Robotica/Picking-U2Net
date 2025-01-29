@@ -1,0 +1,5 @@
+__pycache__/
+__init__/
+images/imagen_13.jpeg
+venv
+model/u2net.pth
