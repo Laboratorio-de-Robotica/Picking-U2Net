@@ -15,6 +15,12 @@ from pick import PickU2Net
 from lib.extrinsics import ExtrinsicCalibrator
 
 print('''
+Servidor TCP/IP para comunicación con robot de picking.
+El servidor recibe consultas del robot y responde con las coordenadas de picking.
+Preparacón:
+      - Calibrar extrínsecamente la cámara con un patrón ajedrez de 9x6 casillas (con la tecla C)
+      - Detectar la posición de las piezas con la tecla D
+
 Teclas:
       C: Calibrar extrínsecamente (computa la homografía)
       D: Detectar la posición de la pieza
@@ -28,7 +34,7 @@ y = 0.0
 angle = 0.0
 aperture = 0.0
 object_detected = False
-
+objects = []
 
 # Get this server IP address
 def get_my_ip_address(test="8.8.8.8"):
@@ -50,7 +56,7 @@ Protocolo:
     "({x}, {y}, {angle} ,{aperture}, {1.0 if object_detected else 0.0})\n"
 '''
 def start_server():
-    global object_detected
+    global object_detected, objects
 
     # Crear un socket TCP/IP
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -72,13 +78,30 @@ def start_server():
                 continue
 
             with conn:
-                # Conexión establecida, recibir la consulta del cliente, una string
+                # Conexión establecida, recibir la consulta del cliente, una string que se ignora
                 data = conn.recv(1024)
                 consulta = data.decode()
                 print(f"Consulta: {consulta}")
 
-                # Enviar las variables al cliente con el fomato requerido por asciiToFloat
-                response = f"({x}, {y}, {angle} ,{aperture}, {1.0 if object_detected else 0.0})\n"
+                if(len(objects)>0):
+                    # Responder con las coordenadas de picking
+                    object = objects.pop()
+                    
+                    # Proyectar las coordenadas con H, y luego calcular el centro y el ángulo
+                    # La apertura se informa en mm, la mayoría de las aplicaciones del robot no la usan
+                    p0 = projectPoint(extrinsicCalibrator.H, object.grabbingPoint0)
+                    p1 = projectPoint(extrinsicCalibrator.H, object.grabbingPoint1)
+                    center = (p0 + p1) / 2
+                    angle = np.arctan2(p1[1] - p0[1], p1[0] - p0[0]) * 360.0 / (2.0 * np.pi)
+                    aperture = np.linalg.norm(p1 - p0)
+
+                    # Enviar las variables al cliente con el fomato requerido por asciiToFloat
+                    response = f"({center[0]}, {center[1]}, {angle} ,{aperture}, 1.0)\n"
+
+                else:
+                    # No hay objetos detectados
+                    response = f"(0.0, 0.0, 0.0, 0.0, 0.0)\n"
+
                 conn.sendall(response.encode())
                 print(f"Respuesta: {response}")
 
@@ -87,7 +110,12 @@ def start_server():
 
                 # Respuesta enviada. Conexión cerrada. Esperando nueva conexión...
 
-
+def projectPoint(H, point):
+    # Proyectar el punto con la homografía
+    p = np.array([point[0], point[1], 1.0])
+    p = np.dot(H, p)
+    p = p / p[2]
+    return p[0:2]
 
 
 # IP y puerto de escucha de este servidor TCP/IP
@@ -122,7 +150,7 @@ try:
             extrinsicCalibrator.calibrate(im)
 
         elif key == 'd':
-            pickU2Net.detect(im)
+            objects = pickU2Net.detect(im)
 
 except KeyboardInterrupt:
     print("Programa interrumpido por el usuario.")
