@@ -11,8 +11,19 @@ def whatIs(array, msg=""):
     return
 
 class U2netModel:
-    # Constructor loads the model: u2net or u2netp
-    def __init__(self, model_name='u2net'):
+    """U2netModel para segmentación de objetos salientes en imágenes.
+
+    Attributes:
+        net (torch.nn.Module): Modelo U2Net para segmentar la imagen.
+        output_size (int): Tamaño de salida de la imagen segmentada.
+    """
+
+    def __init__(self, model_name:str='u2net'):
+        """Inicializa el objeto U2netModel con el modelo especificado.
+        
+        Args:
+            model_name (str, optional): Nombre del modelo a usar, u2net o u2netp. Por defecto "u2net".            
+        """
         if(model_name=='u2net'):
             print("...load U2NET---173.6 MB")
             self.net = U2NET(3,1)
@@ -37,7 +48,15 @@ class U2netModel:
     # Normalize image and make a tensor out of it
     # image: ndarray rgb image
     # Code extracted from data_loader.py
-    def image2Tensor(self, image):
+    def image2Tensor(self, image:np.ndarray):
+        """Convierte una imagen en un tensor normalizado para ser procesado por U2Net.
+        
+        Args:
+            image (np.ndarray): Imagen de entrada.
+
+        Returns:
+            torch.Tensor: Tensor normalizado de la imagen.
+        """
         # resize always casts to float64, astype to float32
         image = resize(image,(self.output_size,self.output_size),mode='constant').astype(np.float32)
 
@@ -63,7 +82,15 @@ class U2netModel:
         return tensor
 
 
-    def predict(self, tensor):
+    def predict(self, tensor:torch.Tensor):
+        """Predice la segmentación de la imagen a partir del tensor de entrada.
+        
+        Args:
+            tensor (torch.Tensor): Tensor de entrada.
+
+        Returns:
+            torch.Tensor: Tensor de salida con la segmentación de la imagen.
+        """
         whatIs(tensor, 'predict tensor')
         d1,d2,d3,d4,d5,d6,d7= self.net(tensor)
         output_map = d1[:,0,:,:]
@@ -72,9 +99,15 @@ class U2netModel:
         whatIs(output_map, 'predict after norm pred')
         return output_map
 
-    # normalize the predicted SOD probability map
-    # elements will range from 0.0 to 1.0
-    def normPRED(self, tensor):
+    def normPRED(self, tensor:torch.Tensor):
+        """Normaliza el tensor de salida de la segmentación.
+        
+        Args:
+            tensor (torch.Tensor): Tensor de salida.
+
+        Returns:
+            torch.Tensor: Tensor normalizado con valores entre 0.0 y 1.0 .
+        """
         element_max = torch.max(tensor)
         element_min = torch.min(tensor)
 
@@ -82,9 +115,17 @@ class U2netModel:
         return normalized_tensor
 
 
-    # map image gets its dims from im
-    # map image in grayscale
-    def mapTensor2Image(self, map_tensor, input_image):
+    def mapTensor2Image(self, map_tensor:torch.Tensor, input_image:np.ndarray):
+        """Convierte el tensor de segmentación en una imagen en escala de grises.
+        
+        Args:
+            map_tensor (torch.Tensor): Tensor de segmentación.
+            input_image (np.ndarray): Imagen de entrada, sólo para tomar sus medidas.
+
+        Returns:
+            np.ndarray: Imagen de la segmentación en escala de grises, del mismo tamaño que input_image.
+        """
+
         whatIs(map_tensor, 'mapTensor2Image map_tensor')
         map_np = map_tensor.squeeze().cpu().data.numpy()*255
         whatIs(map_np, 'mapTensor2Image map_np')
@@ -95,6 +136,16 @@ class U2netModel:
         return map_image
 
     def __call__(self, input_image):
+        """Procesa la imagen de entrada y devuelve la segmentación de la imagen.
+
+        Este método ejecuta en secuencia otros métodos de la clase para procesar la imagen de entrada y devolver la segmentación.
+
+        Args:
+            input_image (np.ndarray): Imagen de entrada.
+
+        Returns:
+            np.ndarray: Imagen de la segmentación en escala de grises, del mismo tamaño que input_image
+        """
         whatIs(input_image, 'input_image')
         image_tensor = self.image2Tensor(input_image)
         whatIs(image_tensor, 'image_tensor')
