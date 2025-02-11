@@ -1,43 +1,61 @@
 from u2net_predict import U2netModel
-import argparse
 import numpy as np
 import cv2 as cv
 from types import SimpleNamespace
 
 class PickU2Net:
-  '''
-  PickU2Net class
-  This class is used to choose grabbing points for objects detected in an image using a U2Net model.
-  Constructor let choose the model to use (u2net or u2netp).
-  __call__ method is used to analyze the input image and get the grabbing points.
-  annotate method is used to annotate the input image with the grabbing points.
-  analizeContour method is used internally on one contour to get the gravity center and principal component unity vector of a contour.
-  getGrabPoints method is used internally on one contour to get the two grabbing points.
+  """PickU2Net determina puntos de agarre para objetos en una imagen.
 
-  Properties:
-    model: U2netModel object
-    minArea: int, minimum area of a contour to be considered
-    maxArea: int, maximum area of a contour to be considered
-    map: np.array, binary map of the output image
-    contours: list of np.array, list of contours detected in the map
-    hierarchy: np.array, hierarchy of the contours
-    results: list of results of the analysis with these properties:
-      center: tuple of int, gravity center of the contour
-      principalComponent: np.array, principal component unity vector of the contour
-      grabbingPoint0: tuple of int, first grabbing point
-      grabbingPoint1: tuple of int, second grabbing point
-      contour: np.array, contour analyzed
+  El constructor configura el objeto. 
+  El método __call__ analiza la imagen de entrada y obtiene los puntos de agarre.
+  El método annotate anota la imagen de entrada con los puntos de agarre.
+  Otros métodos son usados internamente.
+  Muchos resulados intermedios y finales son almacenados en atributos del objeto para poder accederlos sin repetir las operaciones.
 
-    A results element can be None if the associated contour is rejected.
-  '''
-  def __init__(self, model_name="u2net", minArea=100, maxArea=100000):
+  Attributes:
+      model (U2netModel): Modelo U2Net para segmentar la imagen.
+      minArea (int): Área mínima de un contorno para ser considerado.
+      maxArea (int): Área máxima de un contorno para ser considerado.
+      threshold (int): Umbral para segmentar la imagen.
+      map (np.ndarray): Máscara binaria de la imagen segmentada.
+      contours (list): Lista de contornos encontrados en la imagen.
+      results (list): Lista de objetos con los puntos de agarre y otros datos de cada objeto encontrado.      
+  """
+  def __init__(self, model_name:str="u2net", minArea:int=100, maxArea:int=100000, threshold:int=128):
+    """Inicializa el objeto PickU2Net con los argumentos opcionales.
+    
+    Args:
+        model_name (str, optional): Nombre del modelo a usar, u2net o u2netp. Por defecto "u2net".
+        minArea (int, optional): Área mínima de un contorno para ser considerado. Por defecto 100.
+        maxArea (int, optional): Área máxima de un contorno para ser considerado. Por defecto 100000.
+        threshold (int, optional): Umbral para segmentar la imagen. Por defecto 128.
+    """
     self.model = U2netModel(model_name)
     self.minArea = minArea
     self.maxArea = maxArea
+    self.threshold = threshold
 
-  def __call__(self, input_image):
+  def __call__(self, input_image:np.ndarray)->list[SimpleNamespace]:
+    """Procesa la imagen dada y devuelve los puntos de agarre.
+
+    Usa U2Net para segmentar la imagen argumento, analiza los contornos y devuelve los puntos de agarre para cada objeto encontrado.
+    Incova los métodos analizeContour y getGrabPoints para cada contorno.
+    
+    Args:
+        input_image (np.ndarray): Imagen de entrada
+
+    Returns:
+        list[SimpleNamespace]: Lista de objetos con los puntos de agarre y otros datos de cada objeto encontrado.
+          Cada elemento de la lista corresponde a un objeto detectado, y tiene las siguientes propiedades:
+            center: tuple[int,int], coordenadas en píxeles del baricentro del contorno
+            principalComponent: np.array, versor 2D apuntando en la dirección del componente principal
+            grabbingPoint0: tuple of int, punto de agarre
+            grabbingPoint1: tuple of int, otro punto de agarre
+            contour: np.array, contorno analizado
+          Los elementos None corresponden a contornos rechazados.
+    """
     output_image = self.model(input_image)
-    self.map = cv.inRange(output_image, 128, 255)  # You can adjust threshold (inRange 2nd argument)
+    self.map = cv.inRange(output_image, self.threshold, 255)  # You can adjust threshold (inRange 2nd argument)
     self.contours, self.hierarchy = cv.findContours(self.map, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE) # cv.RETR_CCOMP for 2 level (contours with their holes)
     self.results = []
 
@@ -64,7 +82,21 @@ class PickU2Net:
     return self.results
   
 
-  def annotate(self, input_image):
+  def annotate(self, input_image:np.ndarray)->np.ndarray:
+    """Anota la imagen con los puntos de agarre.
+
+    Convierte la imagen a blanco y negro y para cada objeto detectado anota:
+      - puntos de agarre
+      - centro
+    Dibuja los contornos, los puntos de agarre en la imagen de entrada.
+
+
+    Args:
+        input_image (np.ndarray): Imagen de entrada
+
+    Returns:
+        np.ndarray: Imagen anotada
+    """
     # Gray image for color annotation
     imVis = cv.cvtColor(cv.cvtColor(input_image, cv.COLOR_BGR2GRAY), cv.COLOR_GRAY2BGR)
 
@@ -83,8 +115,20 @@ class PickU2Net:
 
     return imVis
 
-  # Gets gravity center and principal component unity vector
-  def analizeContour(self, contour):
+  def analizeContour(self, contour:np.ndarray)->tuple[tuple[int,int],np.ndarray]:
+    """Obtiene baricentro y componente principal de un contorno.
+
+    Computa los momentos del contorno.
+    Obtiene el baricentro con los momentos de primer orden.
+    Calcula el componente principal como primer autovector de la matriz de covarianza obtenida con los momentos centrales de segundo orden.
+  
+    Args:
+        contour (np.ndarray): Contorno a analizar
+
+    Returns:
+        tuple[tuple[int,int],np.ndarray]: Baricentro y componente principal        
+    """
+
     moments = cv.moments(contour)
     center = (int(moments['m10'] / moments['m00']), int(moments['m01'] / moments['m00']))
     M = np.array([[moments['mu20'], moments['mu11']],[moments['mu11'], moments['mu02']]])
@@ -95,11 +139,16 @@ class PickU2Net:
       principalComponent = eigenvectors[:, 1]
     return center, principalComponent
 
-  # Determines two grabing points p1 and p2
-  # Countour intersection with v's perpendicular on c
-  # It doesn't check if more than two point are intersected,
-  # nor check the slipery when contact points aren't normal to the gripper finger
-  def getGrabPoints(self, contour, center, principalComponent):
+  def getGrabPoints(self, contour:np.ndarray, center:tuple[int,int], principalComponent:float)->tuple[tuple[int,int],tuple[int,int]]:
+    """Obtiene dos puntos de agarre en un contorno.
+    
+    Dado un contorno, un baricentro y un componente principal, calcula dos puntos de agarre.
+    El primer punto se encuentra en la intersección del contorno con la recta perpendicular al componente principal que pasa por el baricentro.
+    El segundo punto se encuentra en la intersección del contorno con la misma recta, pero en el lado opuesto del baricentro.
+    No chequea si más de dos puntos son intersectados, ni si los puntos de contacto no son normales a los dedos del gripper.
+    Estas dos verificaciones pendientes podrían ser implementadas en futuras versiones.
+    """
+    
     contour = np.squeeze(contour)
     distancesFromEdge = np.dot(contour - center, principalComponent)
     zeroDistanceIndices = np.argwhere(np.abs(distancesFromEdge)<1.0)
@@ -118,6 +167,8 @@ class PickU2Net:
 
 # Main
 if __name__ == "__main__":
+  import argparse
+
   # Parsing arguments from command line
   parser = argparse.ArgumentParser()
   parser.add_argument("-i", "--input", help="input image file path", default="images/imagen_13r.jpeg")

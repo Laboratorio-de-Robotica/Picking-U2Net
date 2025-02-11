@@ -5,6 +5,7 @@ import numpy as np
 from model import U2NET # full size version 173.6 MB
 from model import U2NETP # small version u2net 4.7 MB
 
+# Debug info, deactivate it by commenting out print statement
 def whatIs(array, msg=""):
     #print(f'{msg} type {type(array)}, {array.dtype}, {array.shape}')
     return
@@ -102,3 +103,37 @@ class U2netModel:
         map_image = self.mapTensor2Image(map_tensor, input_image)
         whatIs(map_image, 'map_image')
         return map_image
+    
+if __name__ == '__main__':
+    import argparse
+    #import cv2 as cv
+    from skimage import io
+    import matplotlib.pyplot as plt
+
+    print('u2net/u2netp prediction')
+    print('Processes the provided input image, shows the prediction SOD heatmap, and optionally saves it')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--input", help="input image file path", default="images/imagen_13r.jpeg")
+    parser.add_argument("-o", "--output", help="output image file path", default="")
+    parser.add_argument("-m", "--model", help="model, either u2net (default) or u2netp", default="u2net")
+    args = parser.parse_args()
+
+    model_name = args.model
+    input_image_path = args.input
+    output_image_path = args.output
+
+    # Input image ndarray
+    #input_image = cv.imread(input_image_path)
+    input_image = io.imread(input_image_path)
+
+    model = U2netModel(model_name)
+    output_image = model(input_image)
+
+    if(output_image_path):
+        io.imsave(output_image_path, output_image)
+
+    #cv.imshow('map', output_image)
+    #cv.waitKey(0)
+    plt.imshow(output_image)
+    plt.show()
