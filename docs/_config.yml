@@ -1,3 +1,4 @@
 title: "Picking con U2Net"
 description: Detección de puntos de agarre para picking para robot con gripper de dos dedos prensiles (antipodal grapsing).  La detección de objetos se hace con el modelo U2Net
-theme: jekyll-theme-minimal
+#theme: jekyll-theme-minimal
+remote_theme: just-the-docs/just-the-docs
