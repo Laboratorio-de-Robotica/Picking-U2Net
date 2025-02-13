@@ -1,28 +1,33 @@
-name: Generate Sphinx Documentation
+# .github/workflows/sphinx-docs.yml
+
+name: Build and Deploy Sphinx Docs
 
 on:
   push:
     branches:
-      - main  # O la rama que uses
+      - main
 
 jobs:
-  docs:
+  build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3  # Clona el repo temporalmente
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: '3.x'
 
-      - name: Install Sphinx and Napoleon
-        run: pip install sphinx sphinx.ext.napoleon sphinx-autoapi
-
-      - name: Run Sphinx
+      - name: Install dependencies
         run: |
-          sphinx-build -b html docs docs/_build
+          python -m pip install --upgrade pip
+          pip install sphinx sphinx-autoapi
+
+      - name: Build Sphinx documentation
+        run: |
+          sphinx-build docs docs/_build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
