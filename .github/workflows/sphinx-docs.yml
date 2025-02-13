@@ -34,3 +34,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_build
+          publish_branch: gh-pages
+          allow_empty_commit: true
+
+# Nota: Asegúrate de otorgar permisos de escritura al GitHub Actions bot. Ve a Settings > Actions > General > Workflow permissions y selecciona 'Read and write permissions'.
