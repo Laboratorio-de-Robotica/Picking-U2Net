@@ -1,31 +1,44 @@
-# conf.py
+# Configuration file for the Sphinx documentation builder.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Project information -----------------------------------------------------
-project = 'Mi Proyecto Python'
-copyright = '2025, Mi Nombre'
-author = 'Mi Nombre'
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
+project = 'Picking U2Net'
+copyright = '2025, Alejandro Silvestri'
+author = 'Alejandro Silvestri'
+release = '0.1'
 
 # -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../'))
+
+
 extensions = [
-    'sphinx.ext.napoleon',  # Usa la guía de estilo de Google
+    'sphinx.ext.autodoc', # documentación automática, extrae la documentación de los archivos del proyecto
+    #'sphinx.ext.viewcode', # enlaza la documentación con el código fuente
+    'sphinx.ext.napoleon',  # interpreta docstrings estilo Google
+    'myst_parser', # soporte para Markdown
+    'sphinx_rtd_theme' # tema Read The Docs
 ]
 
-templates_path = ['_templates']
-exclude_patterns = []
+
+#templates_path = ['_templates']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+language = 'es'
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = 'alabaster'  # El tema no importa mucho si GitHub Pages usa otro
-html_static_path = ['_static']
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# Directorio de salida
-output_dir = '_build'
+# Tema Read The Docs
+html_theme = 'sphinx_rtd_theme'
+#html_static_path = ['_static']
 
-# Configura Napoleon para Google Style
-napoleon_google_docstring = True
-napoleon_numpy_docstring = False
-napoleon_include_init_with_doc = False
-napoleon_include_private_with_doc = False
-napoleon_include_special_with_doc = True
-napoleon_use_ivar = False
-napoleon_use_rtype = True
-napoleon_use_param = True
+# Lista de módulos para simular (mock)
+autodoc_mock_imports = ["torch"]
