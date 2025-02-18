@@ -28,4 +28,4 @@ jobs:
       - name: Build Documentation
         run: |
           # Ajusta las rutas según tu estructura de directorios
-          sphinx-build -b html docs/ docs/html
+          sphinx-build -b html docs/ docs/
