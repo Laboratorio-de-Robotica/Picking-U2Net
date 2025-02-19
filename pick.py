@@ -1,16 +1,55 @@
+"""
+pick.py es un módulo con una única clase: PickU2Net, que determina puntos de agarre para objetos en una imagen.  Típicamente se importa así:
+
+  ```
+  import PickU2Net from pick
+  ```
+
+Usa el modelo U2Net entrenado para segmentar objetos en la imagen de entrada, analiza los contornos y devuelve los puntos de agarre para cada objeto encontrado.
+
+Los puntos de agarrre corresponden a grippers de dos dedos: antipodal grasping.
+
+Se usa sólo con imágenes de una cámara común, y devuelve posiciones en 2D sobre las mismas.
+No determina la profundidad.
+
+El módulo se puede ejecutar como script para probarlo con una imagen de ejemplo de esta manera:
+
+  ```
+  python pick.py --input images/imagen_13r.jpeg  --model u2net
+  ```
+
+Recomendación: en la imagen conviene que el fondo sobresalga por todos los bordes.
+
+El script muestra dos ventanas con la imagen segmentada obtenida por el modelo y la imagen anotada con los puntos de agarre.
+
+Pruebe también el parámetro --model u2netp para usar el modelo liviano, más rápido y menos preciso.
+
+"""
+
 from u2net_predict import U2netModel
 import numpy as np
 import cv2 as cv
 from types import SimpleNamespace
 
 class PickU2Net:
-  """PickU2Net determina puntos de agarre para objetos en una imagen.
+  """
+  PickU2Net determina puntos de agarre para objetos en una imagen.
 
-  El constructor configura el objeto. 
-  El método __call__ analiza la imagen de entrada y obtiene los puntos de agarre.
-  El método annotate anota la imagen de entrada con los puntos de agarre.
-  Otros métodos son usados internamente.
+  - El constructor configura el objeto. 
+  - El método __call__ analiza la imagen de entrada y obtiene los puntos de agarre.
+  - El método annotate anota la imagen de entrada con los puntos de agarre.
+  - Otros métodos son usados internamente.
+
   Muchos resulados intermedios y finales son almacenados en atributos del objeto para poder accederlos sin repetir las operaciones.
+
+  Ejemplo de uso:
+
+      ```
+      picking = PickU2Net()
+      results = picking(input_image)
+      ```
+
+  El método __call__ documenta los resultados devueltos.
 
   Attributes:
       model (U2netModel): Modelo U2Net para segmentar la imagen.
@@ -30,7 +69,6 @@ class PickU2Net:
         minArea (int, optional): Área mínima de un contorno para ser considerado. Por defecto 100.
         maxArea (int, optional): Área máxima de un contorno para ser considerado. Por defecto 100000.
         threshold (int, optional): Umbral para segmentar la imagen. Por defecto 128.
-
     """
     self.model = U2netModel(model_name)
     self.minArea = minArea
@@ -38,10 +76,12 @@ class PickU2Net:
     self.threshold = threshold
 
   def __call__(self, input_image:np.ndarray)->list[SimpleNamespace]:
-    """Procesa la imagen dada y devuelve los puntos de agarre.
+    """
+    Procesa la imagen dada y devuelve los puntos de agarre.
 
     Usa U2Net para segmentar la imagen argumento, analiza los contornos y devuelve los puntos de agarre para cada objeto encontrado.
-    Incova los métodos analizeContour y getGrabPoints para cada contorno.
+
+    Invoca los métodos analizeContour y getGrabPoints para cada contorno.
     
     Args:
         input_image (np.ndarray): Imagen de entrada
@@ -49,13 +89,14 @@ class PickU2Net:
     Returns:
         list[SimpleNamespace]: Lista de objetos con los puntos de agarre y otros datos de cada objeto encontrado.
           Cada elemento de la lista corresponde a un objeto detectado, y tiene las siguientes propiedades:
-            center: tuple[int,int], coordenadas en píxeles del baricentro del contorno
-            principalComponent: np.array, versor 2D apuntando en la dirección del componente principal
-            grabbingPoint0: tuple of int, punto de agarre
-            grabbingPoint1: tuple of int, otro punto de agarre
-            contour: np.array, contorno analizado
-          Los elementos None corresponden a contornos rechazados.
+            - center: tuple[int,int], coordenadas en píxeles del baricentro del contorno
+            - principalComponent: np.array, versor 2D apuntando en la dirección del componente principal
+            - grabbingPoint0: tuple of int, punto de agarre
+            - grabbingPoint1: tuple of int, otro punto de agarre
+            - contour: np.array, contorno analizado
 
+          Los elementos None corresponden a contornos rechazados.
+  
     """
     output_image = self.model(input_image)
     self.map = cv.inRange(output_image, self.threshold, 255)  # You can adjust threshold (inRange 2nd argument)
@@ -121,11 +162,12 @@ class PickU2Net:
     return imVis
 
   def analizeContour(self, contour:np.ndarray)->tuple[tuple[int,int],np.ndarray]:
-    """Obtiene baricentro y componente principal de un contorno.
+    """
+    Obtiene baricentro y componente principal de un contorno.
 
-    Computa los momentos del contorno.
-    Obtiene el baricentro con los momentos de primer orden.
-    Calcula el componente principal como primer autovector de la matriz de covarianza obtenida con los momentos centrales de segundo orden.
+    #. Computa los momentos del contorno.
+    #. Obtiene el baricentro con los momentos de primer orden.
+    #. Calcula el componente principal como primer autovector de la matriz de covarianza obtenida con los momentos centrales de segundo orden.
   
     Args:
         contour (np.ndarray): Contorno a analizar
@@ -149,9 +191,13 @@ class PickU2Net:
     """Obtiene dos puntos de agarre en un contorno.
     
     Dado un contorno, un baricentro y un componente principal, calcula dos puntos de agarre.
+
     El primer punto se encuentra en la intersección del contorno con la recta perpendicular al componente principal que pasa por el baricentro.
+    
     El segundo punto se encuentra en la intersección del contorno con la misma recta, pero en el lado opuesto del baricentro.
+    
     No chequea si más de dos puntos son intersectados, ni si los puntos de contacto no son normales a los dedos del gripper.
+    
     Estas dos verificaciones pendientes podrían ser implementadas en futuras versiones.
     
     """
@@ -179,13 +225,13 @@ if __name__ == "__main__":
   # Parsing arguments from command line
   parser = argparse.ArgumentParser()
   parser.add_argument("-i", "--input", help="input image file path", default="images/imagen_13r.jpeg")
-  parser.add_argument("-o", "--output", help="output image file path", default="")
+  #parser.add_argument("-o", "--output", help="output image file path", default="")
   parser.add_argument("-m", "--model", help="model, either u2net (default) or u2netp", default="u2net")
   args = parser.parse_args()
 
   model_name = args.model
   input_image_path = args.input
-  output_image_path = args.output
+  #output_image_path = args.output
 
   # Read image and analyze
   input_image = cv.imread(input_image_path)

@@ -60,8 +60,8 @@ Este proyecto se probó exitosamente con la última versión de Torch a inicios 
 
 ### u2Net predict
 
-    python3 u2net_predict_demo.py --help
-    python3 u2net_predict_demo.py
+    python u2net_predict.py --help
+    python u2net_predict.py
 
 Procesa un archivo de imagen y muestra la segmentación de u2net.  Permite elegir entre los modelos u2net y u2netp.
 
@@ -69,8 +69,9 @@ Procesa un archivo de imagen y muestra la segmentación de u2net.  Permite elegi
 
 ### Picking
 
-    python3 picking.py --help
-    python3 picking.py
+    python pick.py --help
+    python pick.py
+    python pick.py -i ruta/imagen.jpg -m unetp
 
 Picking también procesa una imagen y determina los puntos de agarre.  Usa u2net_predict como primer paso.
 
@@ -88,9 +89,6 @@ Picking también procesa una imagen y determina los puntos de agarre.  Usa u2net
   - biblioteca para predicción (no para entrenamiento), que normaliza la entrada y la salida
   - define la clase **U2netModel**, en cuyo constructor se elige el modelo u2net o u2netp
   - importa u2net
-- u2net_predict_demo.py
-  - breve demo que lee parámetros de línea de comando, abre una imagen y la segmenta con **U2NetModel**
-  - importa u2net_predict
 - pick.py
   - segmenta la imagen
   - obtiene los contornos
@@ -104,7 +102,7 @@ Picking también procesa una imagen y determina los puntos de agarre.  Usa u2net
 
 El uso dentro de un sistema requiere sólo:
 
-- model
+- model/
 - u2net_predict.py
 - pick.py
 

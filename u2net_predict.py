@@ -1,3 +1,27 @@
+"""
+u2net_predict.py es un módulo que consta de una única clase: U2netModel, que segmenta objetos salientes en imágenes.  Típicamente se importa así:
+
+  ```
+  import U2netModel from u2net_predict
+  ```
+
+Como el nombre insinúa, la clase representa al modelo listo para predecir, para segmentar.
+La clase no está preparada para entrenamiento.
+
+El módulo se puede ejecutar como script para probarlo con una imagen de ejemplo de esta manera:
+
+  ```
+  python u2net_predict.py --input images/imagen_13r.jpeg  --model u2net
+  ```
+
+Recomendación: en la imagen conviene que el fondo sobresalga por todos los bordes.
+
+El script muestra una ventana con la imagen segmentada obtenida por el modelo.
+
+Pruebe también el parámetro --model u2netp para usar el modelo liviano, más rápido y menos preciso.
+
+"""
+
 from skimage.transform import resize
 import torch
 import numpy as np
@@ -5,26 +29,39 @@ import numpy as np
 from model import U2NET # full size version 173.6 MB
 from model import U2NETP # small version u2net 4.7 MB
 
-# Debug info, deactivate it by commenting out print statement
-def whatIs(array, msg=""):
-    #print(f'{msg} type {type(array)}, {array.dtype}, {array.shape}')
-    return
-
 class U2netModel:
-    """U2netModel para segmentación de objetos salientes en imágenes.
+    """
+    U2netModel para segmentación de objetos salientes en imágenes.
 
+    Esta clase se inicializa con un modelo ya entrenado para segmentar objetos salientes: U2Net o U2NetP.
+
+    El método __call__ ejecuta la predicción y segmenta la imagen.    
+    El propio método acomoda el tamaño de la imagen para que se adapte al modelo,
+    y luego acomoda el tamaño del mapa de segmentación para que coincida con la imagen de entrada.
+
+    Modo de uso:
+        ```
+        model = U2netModel()
+        segmentated_map_image = model(input_image)
+        ```
+
+    Los atributos y los métodos son de uso interno.
+
+    Los modelos disponibles son u2net y u2netp, 
+    cuyos parámetros entrenados se encuentran en los archivos u2net.pth de 173.6 MB y u2netp.pth de 4.7 MB, en la carpeta model.
+    Sólo se requiere el archivo del modelo que se va a usar, se puede eliminar el otro.
+        
     Attributes:
         net (torch.nn.Module): Modelo U2Net para segmentar la imagen.
         output_size (int): Tamaño de salida de la imagen segmentada.
-
     """
 
     def __init__(self, model_name:str='u2net'):
-        """Inicializa el objeto U2netModel con el modelo especificado.
+        """
+        Inicializa el objeto U2netModel con el modelo especificado.
         
         Args:
-            model_name (str, optional): Nombre del modelo a usar, u2net o u2netp. Por defecto "u2net".            
-
+            model_name (str, optional): Nombre del modelo a usar, u2net o u2netp. Por defecto "u2net".
         """
         if(model_name=='u2net'):
             print("...load U2NET---173.6 MB")
@@ -47,18 +84,15 @@ class U2netModel:
         self.output_size = 320
 
     
-    # Normalize image and make a tensor out of it
-    # image: ndarray rgb image
-    # Code extracted from data_loader.py
     def image2Tensor(self, image:np.ndarray):
-        """Convierte una imagen en un tensor normalizado para ser procesado por U2Net.
+        """
+        Convierte una imagen en un tensor normalizado para ser procesado por U2Net.
         
         Args:
             image (np.ndarray): Imagen de entrada.
 
         Returns:
             torch.Tensor: Tensor normalizado de la imagen.
-
         """
         # resize always casts to float64, astype to float32
         image = resize(image,(self.output_size,self.output_size),mode='constant').astype(np.float32)
@@ -81,47 +115,11 @@ class U2netModel:
         if torch.cuda.is_available():
             tensor = tensor.cuda()
 
-        whatIs(tensor, 'image2Tensor inputs_test')
         return tensor
 
-
-    def predict(self, tensor:torch.Tensor):
-        """Predice la segmentación de la imagen a partir del tensor de entrada.
-        
-        Args:
-            tensor (torch.Tensor): Tensor de entrada.
-
-        Returns:
-            torch.Tensor: Tensor de salida con la segmentación de la imagen.
-
+    def tensor2Image(self, map_tensor:torch.Tensor, input_image:np.ndarray):
         """
-        whatIs(tensor, 'predict tensor')
-        d1,d2,d3,d4,d5,d6,d7= self.net(tensor)
-        output_map = d1[:,0,:,:]
-        whatIs(output_map, 'predict pred')
-        output_map = self.normPRED(output_map)
-        whatIs(output_map, 'predict after norm pred')
-        return output_map
-
-    def normPRED(self, tensor:torch.Tensor):
-        """Normaliza el tensor de salida de la segmentación.
-        
-        Args:
-            tensor (torch.Tensor): Tensor de salida.
-
-        Returns:
-            torch.Tensor: Tensor normalizado con valores entre 0.0 y 1.0 .
-
-        """
-        element_max = torch.max(tensor)
-        element_min = torch.min(tensor)
-
-        normalized_tensor = (tensor-element_min)/(element_max-element_min)
-        return normalized_tensor
-
-
-    def mapTensor2Image(self, map_tensor:torch.Tensor, input_image:np.ndarray):
-        """Convierte el tensor de segmentación en una imagen en escala de grises.
+        Convierte el tensor de segmentación en una imagen en escala de grises.
         
         Args:
             map_tensor (torch.Tensor): Tensor de segmentación.
@@ -129,20 +127,45 @@ class U2netModel:
 
         Returns:
             np.ndarray: Imagen de la segmentación en escala de grises, del mismo tamaño que input_image.
-
         """
-
-        whatIs(map_tensor, 'mapTensor2Image map_tensor')
         map_np = map_tensor.squeeze().cpu().data.numpy()*255
-        whatIs(map_np, 'mapTensor2Image map_np')
-
         map_image = resize(map_np, input_image.shape[0:2]).astype(np.uint8)
-        whatIs(map_image, 'mapTensor2Image map_image')
-
         return map_image
 
+    def predict(self, input_tensor:torch.Tensor):
+        """
+        Predice la segmentación de la imagen a partir del tensor de entrada.
+        
+        Args:
+            tensor (torch.Tensor): Tensor de entrada.
+
+        Returns:
+            torch.Tensor: Tensor de salida con la segmentación de la imagen.
+        """
+        d1,d2,d3,d4,d5,d6,d7= self.net(input_tensor)
+        output_map = d1[:,0,:,:]
+        output_map = self.normPRED(output_map)
+        return output_map
+
+    def normPRED(self, tensor:torch.Tensor):
+        """
+        Normaliza el tensor de salida de la segmentación.
+        
+        Args:
+            tensor (torch.Tensor): Tensor de salida.
+
+        Returns:
+            torch.Tensor: Tensor normalizado con valores entre 0.0 y 1.0 .
+        """
+        element_max = torch.max(tensor)
+        element_min = torch.min(tensor)
+
+        normalized_tensor = (tensor-element_min)/(element_max-element_min)
+        return normalized_tensor
+
     def __call__(self, input_image):
-        """Procesa la imagen de entrada y devuelve la segmentación de la imagen.
+        """
+        Procesa la imagen de entrada y devuelve la segmentación de la imagen.
 
         Este método ejecuta en secuencia otros métodos de la clase para procesar la imagen de entrada y devolver la segmentación.
 
@@ -150,16 +173,11 @@ class U2netModel:
             input_image (np.ndarray): Imagen de entrada.
 
         Returns:
-            np.ndarray: Imagen de la segmentación en escala de grises, del mismo tamaño que input_image
-            
+            np.ndarray: Imagen de la segmentación en escala de grises, del mismo tamaño que input_image            
         """
-        whatIs(input_image, 'input_image')
         image_tensor = self.image2Tensor(input_image)
-        whatIs(image_tensor, 'image_tensor')
         map_tensor = self.predict(image_tensor)
-        whatIs(map_tensor, 'map_tensor')
-        map_image = self.mapTensor2Image(map_tensor, input_image)
-        whatIs(map_image, 'map_image')
+        map_image = self.tensor2Image(map_tensor, input_image)
         return map_image
     
 if __name__ == '__main__':

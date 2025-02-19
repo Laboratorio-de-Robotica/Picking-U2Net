@@ -36,5 +36,4 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 # Lista de módulos para simular (mock)
-#autodoc_mock_imports = ["torch"]
 autodoc_mock_imports = ["torch", "cv2", "skimage"]
