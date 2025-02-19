@@ -1,5 +1,5 @@
 # Introducción a U2Net para Picking
-<img src="./assets/Picking.png">
+<img src="./_static_/Picking.png">
 
 Picking requiere un sensor que informe al robot las coordenadas donde tomar la pieza.  Un sistema de visión artificial se puede programar a medida de cada tipo de pieza.  Este proyecto adopta U2Net para reconocer cualquier pieza, incluso piezas nunca vistas (aquéllas que no formaron parte del entrenamiento del modelo).
 
@@ -16,7 +16,7 @@ El documento [Pick & place IA](https://docs.google.com/document/d/1cnP3_vzlprbpm
 Ese documento profundiza en los principios de funcionamiento, pero no aborda el modo de uso de la biblioteca, que se explica más abajo.
 
 ## U2Net
-<img src="assets/U2Net.png">
+<img src="_static/U2Net.png">
 
 U2Net es un modelo de deep learning de la categoría SOD (Salient Object Detection), que produce una imagen monocromática segmentando los objetos para separarlos del fondo.
 
@@ -65,7 +65,7 @@ Este proyecto se probó exitosamente con la última versión de Torch a inicios 
 
 Procesa un archivo de imagen y muestra la segmentación de u2net.  Permite elegir entre los modelos u2net y u2netp.
 
-<img src="./assets/u2net_predict_demo.png">
+<img src="./_static/u2net_predict_demo.png">
 
 ### Picking
 
@@ -74,7 +74,7 @@ Procesa un archivo de imagen y muestra la segmentación de u2net.  Permite elegi
 
 Picking también procesa una imagen y determina los puntos de agarre.  Usa u2net_predict como primer paso.
 
-<img src="./assets/Picking.png">
+<img src="./_static/Picking.png">
 
 
 ## Estructura del código
