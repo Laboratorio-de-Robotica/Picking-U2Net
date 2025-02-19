@@ -5,3 +5,4 @@ venv
 model/u2net.pth
 docs/reference/_build
 docs/_build
+docs/source/assets
