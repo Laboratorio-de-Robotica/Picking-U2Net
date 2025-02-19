@@ -20,6 +20,7 @@ class PickU2Net:
       map (np.ndarray): Máscara binaria de la imagen segmentada.
       contours (list): Lista de contornos encontrados en la imagen.
       results (list): Lista de objetos con los puntos de agarre y otros datos de cada objeto encontrado.      
+
   """
   def __init__(self, model_name:str="u2net", minArea:int=100, maxArea:int=100000, threshold:int=128):
     """Inicializa el objeto PickU2Net con los argumentos opcionales.
@@ -29,6 +30,7 @@ class PickU2Net:
         minArea (int, optional): Área mínima de un contorno para ser considerado. Por defecto 100.
         maxArea (int, optional): Área máxima de un contorno para ser considerado. Por defecto 100000.
         threshold (int, optional): Umbral para segmentar la imagen. Por defecto 128.
+
     """
     self.model = U2netModel(model_name)
     self.minArea = minArea
@@ -53,6 +55,7 @@ class PickU2Net:
             grabbingPoint1: tuple of int, otro punto de agarre
             contour: np.array, contorno analizado
           Los elementos None corresponden a contornos rechazados.
+
     """
     output_image = self.model(input_image)
     self.map = cv.inRange(output_image, self.threshold, 255)  # You can adjust threshold (inRange 2nd argument)
@@ -88,6 +91,7 @@ class PickU2Net:
     Convierte la imagen a blanco y negro y para cada objeto detectado anota:
       - puntos de agarre
       - centro
+      
     Dibuja los contornos, los puntos de agarre en la imagen de entrada.
 
 
@@ -96,6 +100,7 @@ class PickU2Net:
 
     Returns:
         np.ndarray: Imagen anotada
+
     """
     # Gray image for color annotation
     imVis = cv.cvtColor(cv.cvtColor(input_image, cv.COLOR_BGR2GRAY), cv.COLOR_GRAY2BGR)
@@ -126,7 +131,8 @@ class PickU2Net:
         contour (np.ndarray): Contorno a analizar
 
     Returns:
-        tuple[tuple[int,int],np.ndarray]: Baricentro y componente principal        
+        tuple[tuple[int,int],np.ndarray]: Baricentro y componente principal
+
     """
 
     moments = cv.moments(contour)
@@ -147,6 +153,7 @@ class PickU2Net:
     El segundo punto se encuentra en la intersección del contorno con la misma recta, pero en el lado opuesto del baricentro.
     No chequea si más de dos puntos son intersectados, ni si los puntos de contacto no son normales a los dedos del gripper.
     Estas dos verificaciones pendientes podrían ser implementadas en futuras versiones.
+    
     """
     
     contour = np.squeeze(contour)

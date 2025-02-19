@@ -16,6 +16,7 @@ class U2netModel:
     Attributes:
         net (torch.nn.Module): Modelo U2Net para segmentar la imagen.
         output_size (int): Tamaño de salida de la imagen segmentada.
+
     """
 
     def __init__(self, model_name:str='u2net'):
@@ -23,6 +24,7 @@ class U2netModel:
         
         Args:
             model_name (str, optional): Nombre del modelo a usar, u2net o u2netp. Por defecto "u2net".            
+
         """
         if(model_name=='u2net'):
             print("...load U2NET---173.6 MB")
@@ -56,6 +58,7 @@ class U2netModel:
 
         Returns:
             torch.Tensor: Tensor normalizado de la imagen.
+
         """
         # resize always casts to float64, astype to float32
         image = resize(image,(self.output_size,self.output_size),mode='constant').astype(np.float32)
@@ -90,6 +93,7 @@ class U2netModel:
 
         Returns:
             torch.Tensor: Tensor de salida con la segmentación de la imagen.
+
         """
         whatIs(tensor, 'predict tensor')
         d1,d2,d3,d4,d5,d6,d7= self.net(tensor)
@@ -107,6 +111,7 @@ class U2netModel:
 
         Returns:
             torch.Tensor: Tensor normalizado con valores entre 0.0 y 1.0 .
+
         """
         element_max = torch.max(tensor)
         element_min = torch.min(tensor)
@@ -124,6 +129,7 @@ class U2netModel:
 
         Returns:
             np.ndarray: Imagen de la segmentación en escala de grises, del mismo tamaño que input_image.
+
         """
 
         whatIs(map_tensor, 'mapTensor2Image map_tensor')
@@ -145,6 +151,7 @@ class U2netModel:
 
         Returns:
             np.ndarray: Imagen de la segmentación en escala de grises, del mismo tamaño que input_image
+            
         """
         whatIs(input_image, 'input_image')
         image_tensor = self.image2Tensor(input_image)

@@ -1,5 +1,5 @@
 # Introducción a U2Net para Picking
-<img src="./_static_/Picking.png">
+<img src="./_static/Picking.png">
 
 Picking requiere un sensor que informe al robot las coordenadas donde tomar la pieza.  Un sistema de visión artificial se puede programar a medida de cada tipo de pieza.  Este proyecto adopta U2Net para reconocer cualquier pieza, incluso piezas nunca vistas (aquéllas que no formaron parte del entrenamiento del modelo).
 

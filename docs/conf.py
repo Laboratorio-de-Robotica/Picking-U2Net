@@ -18,7 +18,6 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../'))
 
-
 extensions = [
     'sphinx.ext.autodoc', # documentación automática, extrae la documentación de los archivos del proyecto
     #'sphinx.ext.viewcode', # enlaza la documentación con el código fuente
@@ -27,18 +26,15 @@ extensions = [
     'sphinx_rtd_theme' # tema Read The Docs
 ]
 
-
-#templates_path = ['_templates']
+templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 language = 'es'
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
 # Tema Read The Docs
 html_theme = 'sphinx_rtd_theme'
-#html_static_path = ['_static']
+html_static_path = ['_static']
 
 # Lista de módulos para simular (mock)
-autodoc_mock_imports = ["torch"]
+#autodoc_mock_imports = ["torch"]
+autodoc_mock_imports = ["torch", "cv2", "skimage"]
