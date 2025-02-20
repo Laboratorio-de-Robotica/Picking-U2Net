@@ -24,7 +24,7 @@ permite elegir IP y puerto destino (los del servidor)
 y por lo tanto ejecutar este cliente desde otra máquina en la misma red.
 """
 
-def main():
+if __name__ == "__main__":
     import argparse
     import socket
 
@@ -37,6 +37,3 @@ def main():
     TCP_socket.sendall(b"Coordenadas, por favor")
     response = TCP_socket.recv(1024)  # Recibir la respuesta (hasta 1024 bytes), este comando es bloqueante
     print("Respuesta del servidor:", response.decode())
-
-if __name__ == "__main__":
-    main()

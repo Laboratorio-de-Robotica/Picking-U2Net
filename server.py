@@ -23,34 +23,10 @@ En desarrollo, no funcional aún.
 
 import socket
 import threading
-import time
 import cv2 as cv
 import numpy as np
 from pick import PickU2Net
 from lib.extrinsics import ExtrinsicCalibrator
-
-print('''
-Servidor TCP/IP para comunicación con robot de picking.
-El servidor recibe consultas del robot y responde con las coordenadas de picking.
-Preparacón:
-      - Calibrar extrínsecamente la cámara con un patrón ajedrez de 9x6 casillas (con la tecla C)
-      - Detectar la posición de las piezas con la tecla D
-
-Teclas:
-      C: Calibrar extrínsecamente (computa la homografía)
-      D: Detectar la posición de la pieza
-      espacio: Borrar las detecciones
-      ESC: Salir del bucle
-      Ctrl+C: Detener el servidor y salir del programa
-''')
-
-# Coordenadas de picking que se informarán al robot
-x = 0.0
-y = 0.0
-angle = 0.0
-aperture = 0.0
-object_detected = False
-objects = []
 
 # Get this server IP address
 def get_my_ip_address(test="8.8.8.8"):
@@ -73,7 +49,9 @@ def start_server():
     Protocolo:
     - El servidor recibe una consulta en formato de string, que no se analiza
     - La string de respuesta tiene el fomato requerido por asciiToFloat en el robot, con esta información:
-        "({x}, {y}, {angle} ,{aperture}, {1.0 if object_detected else 0.0})\n"
+        
+    ```({x}, {y}, {angle} ,{aperture}, {1.0 if object_detected else 0.0})\\n```
+
     """
 
     global object_detected, objects
@@ -88,19 +66,19 @@ def start_server():
         # Bucle infinito para aceptar múltiples conexiones
         while True:
             # Usamos un timeout para evitar bloqueo completo en accept
-            # Esto crea un retardo de hasta 1", apto para una demo académica, no adecuado para producción
+            # Espera recibir datos hasta un segundo, y luego desbloquea con un error de timeout
             s.settimeout(1.0)
             try:
                 # accept() bloquea hasta que recibe una consulta
                 # addr contiene la ip de la máquina que realiza la consulta
-                conn, addr = s.accept()
+                connection, addr = s.accept()
             except socket.timeout:
                 # Si no hay conexión, seguimos esperando
                 continue
 
-            with conn:
+            with connection:
                 # Conexión establecida, recibir la consulta del cliente, una string que se ignora
-                data = conn.recv(1024)
+                data = connection.recv(1024)
                 consulta = data.decode()
                 print(f"Consulta: {consulta}")
 
@@ -123,7 +101,7 @@ def start_server():
                     # No hay objetos detectados
                     response = f"(0.0, 0.0, 0.0, 0.0, 0.0)\n"
 
-                conn.sendall(response.encode())
+                connection.sendall(response.encode())
                 print(f"Respuesta: {response}")
 
                 # Reiniciar la variable de objeto detectado
@@ -138,46 +116,65 @@ def projectPoint(H, point):
     p = p / p[2]
     return p[0:2]
 
+if __name__ == "__main__":
+    print('''
+    Servidor TCP/IP para comunicación con robot de picking.
+    El servidor recibe consultas del robot y responde con las coordenadas de picking.
+    Preparacón:
+        - Calibrar extrínsecamente la cámara con un patrón ajedrez de 9x6 casillas (con la tecla C)
+        - Detectar la posición de las piezas con la tecla D
 
-# IP y puerto de escucha de este servidor TCP/IP
-HOST = get_my_ip_address() # Dirección IP de este servidor
-PORT = 65432           # Puerto donde escucha el servidor, un número inventado que no esté usado por otro servicio
+    Teclas:
+        C: Calibrar extrínsecamente (computa la homografía)
+        D: Detectar la posición de la pieza
+        espacio: Borrar las detecciones
+        ESC: Salir del bucle
+        Ctrl+C: Detener el servidor y salir del programa
+    ''')
 
-# Crear un hilo para el servidor
-server_thread = threading.Thread(target=start_server)
-server_thread.daemon = True  # Hacer que el hilo se cierre cuando termine el programa principal
-server_thread.start()
+    # Coordenadas de picking que se informarán al robot
+    object_detected = False
+    objects = []
 
-# Programa principal continúa haciendo otras cosas
-print(f'Servidor escuchando en IP {HOST} y puerto {PORT}.')
+    # IP y puerto de escucha de este servidor TCP/IP
+    HOST = get_my_ip_address() # Dirección IP de este servidor
+    PORT = 65432           # Puerto donde escucha el servidor, un número inventado que no esté usado por otro servicio
 
-extrinsicCalibrator = ExtrinsicCalibrator()
-pickU2Net = PickU2Net()
-cam = cv.VideoCapture(0)
+    # Crear un hilo para el servidor
+    server_thread = threading.Thread(target=start_server)
+    server_thread.daemon = True  # Hacer que el hilo se cierre cuando termine el programa principal
+    server_thread.start()
+
+    # Programa principal continúa haciendo otras cosas
+    print(f'Servidor escuchando en IP {HOST} y puerto {PORT}.')
+
+    extrinsicCalibrator = ExtrinsicCalibrator()
+    pickU2Net = PickU2Net()
+    cam = cv.VideoCapture(0)
 
 
-# Bucle principal donde se determinan las coordenadas x e y
-try:
-    while True:
-        im = cam.read()
+    # Bucle principal donde se determinan las coordenadas x e y
+    try:
+        while True:
+            im = cam.read()
 
-        # Pausa pequeña para permitir que el servidor siga atendiendo consultas
-        key = cv.waitKey(100)
-        if key == 27:
-            break
+            # Pausa pequeña para permitir que el servidor siga atendiendo consultas
+            key = cv.waitKey(100)
+            if key == 27:
+                break
 
-        key = ord(key)
-        if key == 'c':
-            # Calibrar
-            extrinsicCalibrator.calibrate(im)
+            key = ord(key)
+            if key == 'c':
+                # Calibrar
+                extrinsicCalibrator.calibrate(im)
 
-        elif key == 'd':
-            # Detectar objetos
-            objects = pickU2Net(im)
+            elif key == 'd':
+                # Detectar objetos
+                objects = pickU2Net(im)
 
-        elif key == ' ':
-            # Borrar detecciones
-            objects = []
+            elif key == ' ':
+                # Borrar detecciones
+                objects = []
 
-except KeyboardInterrupt:
-    print("Programa interrumpido por el usuario.")
+    except KeyboardInterrupt:
+        print("Programa interrumpido por el usuario.")

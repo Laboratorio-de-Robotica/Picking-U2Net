@@ -1,8 +1,44 @@
+"""
+Este módulo contiene una única clase: ExtrinsicCalibrator, que hace las veces de calibrador extrínseco.
+
+Si se ejecuta como programa, corre una demo en vivo sobre la cámara.  
+Requiere un patrón de calibración para detectar.
+
+
+En rigor el objeto obtiene una homografía en lugar de la pose de la cámara, 
+que servirá para convertir coordenadas sobre la imagen expresadas en píxeles 
+en coordenadas en metros sobre la mesa del robot.
+
+La una cámara cenital que obtiene la vista superior de la mesa del robot.
+Esta imagen se procesa con detectores que identifican elementos sobre la imagen y sus coordenadas en píxeles.
+Es necesario convertirlas al sistema de referencia metrico del robot.  
+Para eso se usa la homografía obtenida con ExtrinsicCalibrator.
+
+El "calibrador extrínseco" busca un patrón de calibración tipo ajedrez en la imagen,
+y lo usa para computar la homografía.
+"""
+
 import numpy as np
 import cv2 as cv
 
 class ExtrinsicCalibrator:
+  """
+  Clase para encontrar la homografía a partir de una imagen con un patrón de calibración ajedrez.
+
+  Por lo general los resultados finales e intermedios se guardan en propiedades.
+  Cuando se requiere una imagen, si se omite se toma la última guardada en la propiedad ```self.im```.
+  """
   def __init__(self, chessBoard=(9,6), square_size=25, cameraMatrix=None, distCoeffs=None):
+    """
+    Inicializa el calibrador con parámetros de cámara y del patrón de calibración.
+
+    Args:
+      chessBoard: dimensiones del patrón de calibración ajedrez, preferentemente impar x par.
+      square_size: longitud del lado del cuadrado del patrón de calibración, en las unidades métricas que el usuario elija.
+      cameraMatrix: matriz de cámara de 3x3 obtenida en el proceso de calibración intrínseca, ajeno a este código.  Si no se proporciona no se antidistorsionan las esquinas.
+      distCoeffs: coreficientes de distorsión obtenidos en el proceso de calibración intrínseca, ajeno a este código.  Si no se proporcionan se asumen cero (sin distorsión).
+      
+    """
     self.chessBoard = chessBoard
     self.square_size = square_size
     self.cameraMatrix = cameraMatrix
@@ -13,13 +49,20 @@ class ExtrinsicCalibrator:
     self.chessboardPointCloud3D[:,:2] = np.mgrid[0:self.chessBoard[0],0:self.chessBoard[1]].T.reshape(-1,2)
 
   def findCorners(self, im):
-    '''
-    Finds the chessboard corners in the image, with subpixel precision.
-    If the camera matrix and distortion coefficients are provided, the corners are undistorted.
-    Results are stored in self.chessboardFound, self.corners, self.im and self.imGray.
-    If image is not provided, it returns immediately leaving previous results untouched.
-    Returns chessboardFound flag
-    '''
+    """
+    Detecta las esquinas del patrón de calibración ajedrez en la imagen, con precisión subpíxel.
+
+    - Si se proporcionan los coeficientes de distorsión, las esquinas se antidistorsionan.
+    - Los resultados se guardan en ```self.chessboardFound, self.corners, self.im y self.imGray```.
+    - Si no se proporciona una imagen, retorna inmediatamente sin hacer nada preservando los resultados anteriores.
+
+    Args:
+      im (np.ndarray): imagen de la cámara en la que se buscará el patrón de calibración
+
+    Returns:
+      chessboardFound flag
+
+    """
     if im is None:
       return
     
@@ -39,10 +82,17 @@ class ExtrinsicCalibrator:
     return self.chessboardFound
   
   def drawCorners(self, im=None):
-    '''
-    Draws the chessboard corners in the image.
-    If the image is not provided, it uses the last results from image stored in self.im.
-    '''
+    """
+    Anota las esquinas del patrón ajedrez en la imagen.
+
+    Args:
+      im (np.ndarray): Imagen de entrada sobre la que se realizarán las anotaciones.
+      Si no se proporciona usa ```self.im```.
+
+    Returns:
+      la imagen anotada.
+
+    """
     if im is None:
        im = self.im
     if self.chessboardFound:
@@ -50,12 +100,17 @@ class ExtrinsicCalibrator:
     return im
   
   def computeHwc(self):
-    '''
-    Finds the homography between the chessboard corners and the 3D chessboard points.
-    If the image is not provided, it uses the last results from image stored in self.im.
-    Returns Hwc, wich can be an empty matrix if the homography is not found.
-    Returns None if the corners are not found.
-    '''
+    """
+    Computa la homografía entre las esquinas del patrón en la imagen 
+    y las coordenadas 3D de esas esquinas en el patrón.
+
+    Returns:
+      La homografía Hwc que transforma píxeles de la imagen en coordenadas métricas del mundo.
+      Si no se logra computar la homografía la matriz estará vacía.
+
+      None si no se encontraron las esquinas del patrón.
+
+    """
     if not self.chessboardFound:
       return None
     
@@ -63,11 +118,21 @@ class ExtrinsicCalibrator:
     return self.Hwc
 
   def getHviz(self, scaleFactor=1.0, translation=(0,0)):
-    '''
-    Returns a visualization of the homography, with the chessboard points projected in the image.
-    scaleFactor: scales the chessboard points
-    translation: where to translate the origin
-    '''
+    """
+    Computa una homografía alternativa, específica para visualización, 
+    que produce una vista cenital.
+
+    Tiene una escala diferente y el origen colocado en un punto más conveniente.
+
+    Args:
+      scaleFactor: factor de escala.  Si la escala métrica está en cm, un píxel por cm puede ser poco, esto se puede cambiar con el factor de escala.
+      translation: el sistema de referencia del robot tiene excursión simétrica, con coordenadas negativas y positicas, de modo que el origen está en el medio.
+      la visualización no muestra coordenadas negativas, por lo que conviene mover el origen a un lugar más adecuado.
+
+    Returns:
+      Hviz, la homografía para visualización
+    """
+
     if self.Hwc is None:
       return None
     
@@ -79,6 +144,18 @@ class ExtrinsicCalibrator:
 
 
   def computePose(self):
+    """
+    De la homografía extrae la pose 3D y la expresa de dos maneras:
+    
+    - como Tcw, la matriz de 4x4 en coordenadas homogéneas
+    - en notación Rodrigues: vectores traslación y rotación
+
+    Returns:
+      rvecs
+      tvecs
+      Tcw
+
+    """
     if self.cameraMatrix is None:
        return None, None, None
     

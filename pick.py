@@ -188,7 +188,8 @@ class PickU2Net:
     return center, principalComponent
 
   def getGrabingPoints(self, contour:np.ndarray, center:tuple[int,int], principalComponent:float)->tuple[tuple[int,int],tuple[int,int]]:
-    """Obtiene dos puntos de agarre en un contorno.
+    """
+    Obtiene dos puntos de agarre en un contorno a partir del resultado de ```analyzeContour()```
     
     Dado un contorno, un baricentro y un componente principal, calcula dos puntos de agarre.
 
@@ -199,6 +200,11 @@ class PickU2Net:
     No chequea si más de dos puntos son intersectados, ni si los puntos de contacto no son normales a los dedos del gripper.
     
     Estas dos verificaciones pendientes podrían ser implementadas en futuras versiones.
+
+    Args:
+      contour (np.ndarray):
+      center (tuple[int,int]):
+      principalComponent (float):
     
     """
     

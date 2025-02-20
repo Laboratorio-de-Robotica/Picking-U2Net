@@ -17,6 +17,7 @@ release = '0.1'
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../'))  # ruta el código, relativa a este archivo conf.py
+sys.path.insert(0, os.path.abspath('../lib'))
 
 extensions = [
     'sphinx.ext.autodoc', # documentación automática, extrae la documentación de los archivos del proyecto
