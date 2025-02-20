@@ -6,3 +6,5 @@ Referencia de Picking-U2Net
 
    pick
    u2net_predict
+   server
+   test-client

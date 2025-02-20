@@ -1,7 +1,22 @@
 '''
-TCP server listening for incoming queries from robot, asking por coordinates for picking.
-In combination with computer vision system locating objects with U2Net.
-And a calibration routine for extrinsic camera calibration and homography matrix computation.
+Servidor que escucha consultas TCP provenientes del robot, solicitando coordenadas de picking.
+
+Incluye un sistema de visión artificial provisto por la biblioteca pick, 
+que determina las coordenadas de picking en una imagen.
+
+Incluye también una rutina de calibración extrínseca para la cámara que determina la matriz de homografía a partir de un patrón de calibración ajedrez de 6x9.
+
+El sistemas de visión artificial puede detectar varios objetos en la imagen.
+El servidor responde con las coordenadas de picking de un objeto a la vez.
+
+El sistema se controla con teclas:
+
+- C: calibrar la cámara con un patrón ajedrez de 9x6 (es lo primero que hay que hacer al ejecutar)
+- D: detectar piezas, decide el agarre de cada una y las informa al robot de a una por vez
+- espacio: borrar piezas
+- esc: salir
+
+El servidor se puede probar con un cliente para test que hace el rol del robot.
 
 En desarrollo, no funcional aún.
 '''
@@ -24,6 +39,7 @@ Preparacón:
 Teclas:
       C: Calibrar extrínsecamente (computa la homografía)
       D: Detectar la posición de la pieza
+      espacio: Borrar las detecciones
       ESC: Salir del bucle
       Ctrl+C: Detener el servidor y salir del programa
 ''')
@@ -38,6 +54,9 @@ objects = []
 
 # Get this server IP address
 def get_my_ip_address(test="8.8.8.8"):
+    """
+
+    """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     myIP = ""
     try:
@@ -47,15 +66,16 @@ def get_my_ip_address(test="8.8.8.8"):
         sock.close()
         return myIP
 
-'''
-Función que ejecuta el servidor TCP/IP en un hilo aparte
-
-Protocolo:
-- El servidor recibe una consulta en formato de string, que no se analiza
-- La string de respuesta tiene el fomato requerido por asciiToFloat, con esta información:
-    "({x}, {y}, {angle} ,{aperture}, {1.0 if object_detected else 0.0})\n"
-'''
 def start_server():
+    """
+    Función que ejecuta el servidor TCP/IP en un hilo aparte
+
+    Protocolo:
+    - El servidor recibe una consulta en formato de string, que no se analiza
+    - La string de respuesta tiene el fomato requerido por asciiToFloat en el robot, con esta información:
+        "({x}, {y}, {angle} ,{aperture}, {1.0 if object_detected else 0.0})\n"
+    """
+
     global object_detected, objects
 
     # Crear un socket TCP/IP
@@ -68,6 +88,7 @@ def start_server():
         # Bucle infinito para aceptar múltiples conexiones
         while True:
             # Usamos un timeout para evitar bloqueo completo en accept
+            # Esto crea un retardo de hasta 1", apto para una demo académica, no adecuado para producción
             s.settimeout(1.0)
             try:
                 # accept() bloquea hasta que recibe una consulta
@@ -147,10 +168,16 @@ try:
 
         key = ord(key)
         if key == 'c':
+            # Calibrar
             extrinsicCalibrator.calibrate(im)
 
         elif key == 'd':
-            objects = pickU2Net.detect(im)
+            # Detectar objetos
+            objects = pickU2Net(im)
+
+        elif key == ' ':
+            # Borrar detecciones
+            objects = []
 
 except KeyboardInterrupt:
     print("Programa interrumpido por el usuario.")

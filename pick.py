@@ -114,7 +114,7 @@ class PickU2Net:
 
       # gravity center c, principal component unity vector v
       center, principalComponent = self.analizeContour(contour)
-      grabbingPoint0, grabbingPoint1 = self.getGrabPoints(contour, center, principalComponent)
+      grabbingPoint0, grabbingPoint1 = self.getGrabingPoints(contour, center, principalComponent)
       result = SimpleNamespace()
       result.center = center
       result.principalComponent = principalComponent
@@ -187,7 +187,7 @@ class PickU2Net:
       principalComponent = eigenvectors[:, 1]
     return center, principalComponent
 
-  def getGrabPoints(self, contour:np.ndarray, center:tuple[int,int], principalComponent:float)->tuple[tuple[int,int],tuple[int,int]]:
+  def getGrabingPoints(self, contour:np.ndarray, center:tuple[int,int], principalComponent:float)->tuple[tuple[int,int],tuple[int,int]]:
     """Obtiene dos puntos de agarre en un contorno.
     
     Dado un contorno, un baricentro y un componente principal, calcula dos puntos de agarre.
@@ -225,7 +225,6 @@ if __name__ == "__main__":
   # Parsing arguments from command line
   parser = argparse.ArgumentParser()
   parser.add_argument("-i", "--input", help="input image file path", default="images/imagen_13r.jpeg")
-  #parser.add_argument("-o", "--output", help="output image file path", default="")
   parser.add_argument("-m", "--model", help="model, either u2net (default) or u2netp", default="u2net")
   args = parser.parse_args()
 

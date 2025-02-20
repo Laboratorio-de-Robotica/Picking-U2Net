@@ -16,11 +16,10 @@ release = '0.1'
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../'))  # ruta el código, relativa a este archivo conf.py
 
 extensions = [
     'sphinx.ext.autodoc', # documentación automática, extrae la documentación de los archivos del proyecto
-    #'sphinx.ext.viewcode', # enlaza la documentación con el código fuente
     'sphinx.ext.napoleon',  # interpreta docstrings estilo Google
     'myst_parser', # soporte para Markdown
     'sphinx_rtd_theme' # tema Read The Docs
@@ -35,5 +34,5 @@ language = 'es'
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
-# Lista de módulos para simular (mock)
+# Lista de módulos que no estarán disponibles al documentar
 autodoc_mock_imports = ["torch", "cv2", "skimage"]
