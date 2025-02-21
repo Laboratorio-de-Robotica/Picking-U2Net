@@ -63,7 +63,7 @@ def start_server():
 
     # Crear un socket TCP/IP
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((HOST, PORT))
+        s.bind(('', PORT))  # ip '' acepta todas las ip de la máquina, incluyendo localhost
         s.listen()
 
         print(f"Servidor escuchando en {HOST}:{PORT}...")
@@ -83,7 +83,8 @@ def start_server():
                     # el cliente cerró la conexión
                     break
 
-                print(f"Consulta: {data.decode()}")
+                print(data)
+                print(f"Consulta: {data}) #{data.decode('utf-8', errors='ignore')}")
 
                 if len(objects)>0:
                     # Responder con las coordenadas de picking
@@ -104,11 +105,8 @@ def start_server():
                     # No hay objetos detectados
                     response = f"(0.0, 0.0, 0.0, 0.0, 0.0)\n"
 
-                    connection.sendall(response.encode())
-                    print(f"Respuesta: {response}")
-
-                    # Reiniciar la variable de objeto detectado
-                    object_detected = False
+                connection.sendall(response.encode())
+                print(f"Respuesta: {response}")
 
             # Conexión cerrada. El siguiente bucle espera nueva conexión.
             connection.close()
