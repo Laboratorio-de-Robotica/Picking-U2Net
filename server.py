@@ -11,6 +11,7 @@ El servidor responde con las coordenadas de picking de un objeto a la vez.
 
 El sistema se controla con teclas:
 
+- P: activa o desactiva la detección del patrón ajedrez
 - C: calibrar la cámara con un patrón ajedrez de 9x6 (es lo primero que hay que hacer al ejecutar)
 - D: detectar piezas, decide el agarre de cada una y las informa al robot de a una por vez
 - espacio: borrar piezas
@@ -54,7 +55,7 @@ def start_server():
     - El servidor recibe una consulta en formato de string, que no se analiza
     - La string de respuesta tiene el fomato requerido por asciiToFloat en el robot, con esta información:
         
-    ``({x}, {y}, {angle} ,{aperture}, {1.0 if object_detected else 0.0})\\n``
+    ``({1.0 if object_detected else 0.0}, {x}, {y}, {angle} ,{aperture})\\n``
 
     """
 
@@ -66,6 +67,7 @@ def start_server():
         s.listen()
 
         print(f"Servidor escuchando en {HOST}:{PORT}...")
+        print(f'getsockname {s.getsockname()}')
 
         # Bucle infinito para aceptar múltiples conexiones
         while True:
@@ -86,20 +88,20 @@ def start_server():
                 consulta = data.decode()
                 print(f"Consulta: {consulta}")
 
-                if(len(objects)>0):
+                if len(objects)>0:
                     # Responder con las coordenadas de picking
                     object = objects.pop()
                     
                     # Proyectar las coordenadas con H, y luego calcular el centro y el ángulo
                     # La apertura se informa en mm, la mayoría de las aplicaciones del robot no la usan
-                    p0 = projectPoint(extrinsicCalibrator.H, object.grabbingPoint0)
-                    p1 = projectPoint(extrinsicCalibrator.H, object.grabbingPoint1)
+                    p0 = projectPoint(extrinsicCalibrator.Hwc, object.grabbingPoint0)
+                    p1 = projectPoint(extrinsicCalibrator.Hwc, object.grabbingPoint1)
                     center = (p0 + p1) / 2
                     angle = np.arctan2(p1[1] - p0[1], p1[0] - p0[0]) * 360.0 / (2.0 * np.pi)
                     aperture = np.linalg.norm(p1 - p0)
 
                     # Enviar las variables al cliente con el fomato requerido por asciiToFloat
-                    response = f"({center[0]}, {center[1]}, {angle} ,{aperture}, 1.0)\n"
+                    response = f"(1.0, {center[0]}, {center[1]}, {angle}, {aperture})\n"
 
                 else:
                     # No hay objetos detectados
@@ -117,9 +119,9 @@ def projectPoint(H, point):
     """
     Proyecta un punto usando la homografía.
 
-    # Expande el punto dado a coordenadas homogéneas en el espacio proyectivo asociado
-    # Lo proyecta con la transformación lineal H
-    # Normaliza el resultado y lo reduce a 2 dimensiones devolviéndolo al espacio vectorial
+    #. Expande el punto dado a coordenadas homogéneas en el espacio proyectivo asociado
+    #. Lo proyecta con la transformación lineal H
+    #. Normaliza el resultado y lo reduce a 2 dimensiones devolviéndolo al espacio vectorial
 
     Args:
         H: homografía, matriz de 3x3
@@ -128,6 +130,7 @@ def projectPoint(H, point):
     Returns:
         punto 2D proyectado
     """
+
     # Proyectar el punto con la homografía
     p = np.array([point[0], point[1], 1.0])
     p = np.dot(H, p)
@@ -170,42 +173,66 @@ if __name__ == "__main__":
     pickU2Net = PickU2Net()
     cam = cv.VideoCapture(0)
 
+    pattern_detection_state = True
+    pattern_detected = False
 
     # Bucle principal donde se determinan las coordenadas x e y
-    try:
-        while True:
-            im = cam.read()
+    while True:
+        ret, im = cam.read()
 
-            # Pausa pequeña para permitir que el servidor siga atendiendo consultas
-            key = cv.waitKey(100)
-            if key == 27:
-                break
+        if pattern_detection_state:
+            # busca el patrón ajedrez
+            pattern_detected = extrinsicCalibrator.findCorners(im)
+            if pattern_detected:
+                im = extrinsicCalibrator.drawCorners()
 
-            key = ord(key)
-            if key == 'c':
-                # Calibrar
-                if extrinsicCalibrator.findCorners(im):
-                    extrinsicCalibrator.computeHwc()
-                    print(f"Hwc: {extrinsicCalibrator.Hwc}")
+        cv.imshow('Camara', im)
 
-                    Hviz = extrinsicCalibrator.getHviz(scaleFactor=25.0, translation=(5,5))
-                    imFrontal = cv.warpPerspective(im, Hviz, (im.shape[1], im.shape[0]))
-                    cv.imshow('Frontal', imFrontal)
-                    im = extrinsicCalibrator.drawCorners()
 
+
+        # Pausa pequeña para permitir que el servidor siga atendiendo consultas
+        key = cv.waitKey(100)
+        if key < 0:
+            continue
+        elif key == 27:
+            break
+
+        key = chr(key)
+        if key == 'p':
+            pattern_detection_state = not pattern_detection_state
+            print(f'Detección del patrón de calibración: {pattern_detection_state}')
+
+        elif key == 'c':
+            # Calibrar
+            if pattern_detection_state and pattern_detected:
+                extrinsicCalibrator.computeHwc()
+                print(f"Hwc: \n{extrinsicCalibrator.Hwc}")
+                pattern_detection_state = False
+
+                # Homografía para visualización: los argumentos de getHviz son arbitrarios y se deberían ajustar al caso particular
+                Hviz = extrinsicCalibrator.getHviz(scaleFactor=25.0, translation=(5,5))
+                imFrontal = cv.warpPerspective(im, Hviz, (im.shape[1], im.shape[0]))
+
+                cv.imshow('Frontal', imFrontal)
+
+            else:
+                if not pattern_detection_state:
+                    print('Primero pulse P para activar la detección del patrón de calibración.')
                 else:
-                    print("No se detectó el patrón")
-
-                cv.imshow('Cam', im)
+                    print('No se detectó el patrón.')
 
 
-            elif key == 'd':
-                # Detectar objetos
-                objects = pickU2Net(im)
+        elif key == 'd':
+            # Detectar objetos
+            objects = pickU2Net(im)
+            cv.imshow('u2net', pickU2Net.map)
 
-            elif key == ' ':
-                # Borrar detecciones
-                objects = []
+            im_picking = pickU2Net.annotate(im)
+            cv.imshow('Agarre', im_picking)
 
-    except KeyboardInterrupt:
-        print("Programa interrumpido por el usuario.")
+            print(f'Detecciones: {len(objects)}')
+
+        elif key == ' ':
+            # Borrar detecciones
+            objects = []
+            print('Detecciones borradas.')

@@ -7,7 +7,7 @@ pick.py es un módulo con una única clase: PickU2Net, que determina puntos de a
 
 Usa el modelo U2Net entrenado para segmentar objetos en la imagen de entrada, analiza los contornos y devuelve los puntos de agarre para cada objeto encontrado.
 
-Los puntos de agarrre corresponden a grippers de dos dedos: antipodal grasping.
+Los puntos de agarre corresponden a grippers de dos dedos: antipodal grasping.
 
 Se usa sólo con imágenes de una cámara común, y devuelve posiciones en 2D sobre las mismas.
 No determina la profundidad.
@@ -109,7 +109,7 @@ class PickU2Net:
       area = cv.contourArea(contour)
       if(area<self.minArea or area>self.maxArea):
         # Too small or too big
-        self.results.append(None)
+        #self.results.append(None)
         continue
 
       # gravity center c, principal component unity vector v
@@ -124,10 +124,11 @@ class PickU2Net:
       self.results.append(result)
 
     return self.results
-  
+
 
   def annotate(self, input_image:np.ndarray)->np.ndarray:
-    """Anota la imagen con los puntos de agarre.
+    """
+    Anota la imagen con los puntos de agarre.
 
     Convierte la imagen a blanco y negro y para cada objeto detectado anota:
       - puntos de agarre
@@ -137,7 +138,7 @@ class PickU2Net:
 
 
     Args:
-        input_image (np.ndarray): Imagen de entrada
+        input_image (np.ndarray): Imagen de entrada a color
 
     Returns:
         np.ndarray: Imagen anotada
@@ -148,9 +149,6 @@ class PickU2Net:
 
     # Analize and annotate contours
     for result in self.results:
-      if(not result):
-        continue
-
       # Annotation
       cv.drawContours(imVis, [result.contour], 0, (0, 128, 255), 2)
       arrow = (result.principalComponent*50).astype(np.int32)

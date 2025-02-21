@@ -1,7 +1,8 @@
 """
 Este módulo contiene una única clase: ExtrinsicCalibrator, que hace las veces de calibrador extrínseco.
 
-[Más sobre este módulo](https://laboratorio-de-robotica.github.io/Calibrador-de-camara/extrinsics.html)
+`Más sobre este módulo <https://laboratorio-de-robotica.github.io/Calibrador-de-camara/extrinsics.html>`_
+
 
 Si se ejecuta como programa, corre una demo en vivo sobre la cámara.
 Requiere un patrón de calibración para detectar.
@@ -49,6 +50,8 @@ class ExtrinsicCalibrator:
     self.distCoeffs = distCoeffs
     self.chessboardPointCloud3D = np.zeros((self.chessBoard[0]*self.chessBoard[1],3), np.float32)
     self.chessboardPointCloud3D[:,:2] = np.mgrid[0:self.chessBoard[0],0:self.chessBoard[1]].T.reshape(-1,2)
+    self.Hwc = np.eye(3)
+    self.Hviz = self.Hwc
 
   def findCorners(self, im):
     """
@@ -69,7 +72,7 @@ class ExtrinsicCalibrator:
       return
     
     self.im = im
-    self.Hwc = None
+    #self.Hwc = None
     self.tvecs = None
     self.rvecs = None
     self.Tcw = None

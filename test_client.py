@@ -31,10 +31,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--server_ip", help="server IP", default="localhost")
-    parser.add_argument("-p", "--server_port", help="server port", default=65432)
+    parser.add_argument("-p", "--server_port", help="server port", type=int, default=65432)
+    args = parser.parse_args()
 
     TCP_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    TCP_socket.connect((parser.server_ip, parser.server_port))
+    TCP_socket.connect((args.server_ip, args.server_port))
     TCP_socket.sendall(b"Coordenadas, por favor")
     response = TCP_socket.recv(1024)  # Recibir la respuesta (hasta 1024 bytes), este comando es bloqueante
     print("Respuesta del servidor:", response.decode())
