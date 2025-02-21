@@ -8,4 +8,4 @@ Referencia de Picking-U2Net
    u2net_predict
    extrinsics
    server
-   test-client
+   test_client

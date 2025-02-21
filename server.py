@@ -28,10 +28,14 @@ import numpy as np
 from pick import PickU2Net
 from lib.extrinsics import ExtrinsicCalibrator
 
-# Get this server IP address
 def get_my_ip_address(test="8.8.8.8"):
     """
+    Releva el nº de IP de la propia máquina.
 
+    Para eso abre un socket contra un nº de IP (por defecto un dns de Google).
+
+    Returns:
+        (string) ip de la propia máquina
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     myIP = ""
@@ -50,7 +54,7 @@ def start_server():
     - El servidor recibe una consulta en formato de string, que no se analiza
     - La string de respuesta tiene el fomato requerido por asciiToFloat en el robot, con esta información:
         
-    ```({x}, {y}, {angle} ,{aperture}, {1.0 if object_detected else 0.0})\\n```
+    ``({x}, {y}, {angle} ,{aperture}, {1.0 if object_detected else 0.0})\\n``
 
     """
 
@@ -110,6 +114,20 @@ def start_server():
                 # Respuesta enviada. Conexión cerrada. Esperando nueva conexión...
 
 def projectPoint(H, point):
+    """
+    Proyecta un punto usando la homografía.
+
+    # Expande el punto dado a coordenadas homogéneas en el espacio proyectivo asociado
+    # Lo proyecta con la transformación lineal H
+    # Normaliza el resultado y lo reduce a 2 dimensiones devolviéndolo al espacio vectorial
+
+    Args:
+        H: homografía, matriz de 3x3
+        point: punto 2D
+
+    Returns:
+        punto 2D proyectado
+    """
     # Proyectar el punto con la homografía
     p = np.array([point[0], point[1], 1.0])
     p = np.dot(H, p)

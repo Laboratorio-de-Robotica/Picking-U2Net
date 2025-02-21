@@ -1,18 +1,20 @@
 """
 u2net_predict.py es un módulo que consta de una única clase: U2netModel, que segmenta objetos salientes en imágenes.  Típicamente se importa así:
 
-  ```
-  import U2netModel from u2net_predict
-  ```
+    .. code-block:: python
+
+        import U2netModel from u2net_predict
+
 
 Como el nombre insinúa, la clase representa al modelo listo para predecir, para segmentar.
 La clase no está preparada para entrenamiento.
 
 El módulo se puede ejecutar como script para probarlo con una imagen de ejemplo de esta manera:
 
-  ```
-  python u2net_predict.py --input images/imagen_13r.jpeg  --model u2net
-  ```
+    .. code-block:: bash
+
+        python u2net_predict.py --input images/imagen_13r.jpeg  --model u2net
+
 
 Recomendación: en la imagen conviene que el fondo sobresalga por todos los bordes.
 
@@ -40,10 +42,11 @@ class U2netModel:
     y luego acomoda el tamaño del mapa de segmentación para que coincida con la imagen de entrada.
 
     Modo de uso:
-        ```
-        model = U2netModel()
-        segmentated_map_image = model(input_image)
-        ```
+        .. code-block:: python
+        
+            model = U2netModel()
+            segmentated_map_image = model(input_image)
+        
 
     Los atributos y los métodos son de uso interno.
 

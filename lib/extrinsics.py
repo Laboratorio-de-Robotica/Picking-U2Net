@@ -1,7 +1,9 @@
 """
 Este módulo contiene una única clase: ExtrinsicCalibrator, que hace las veces de calibrador extrínseco.
 
-Si se ejecuta como programa, corre una demo en vivo sobre la cámara.  
+[Más sobre este módulo](https://laboratorio-de-robotica.github.io/Calibrador-de-camara/extrinsics.html)
+
+Si se ejecuta como programa, corre una demo en vivo sobre la cámara.
 Requiere un patrón de calibración para detectar.
 
 
@@ -87,7 +89,7 @@ class ExtrinsicCalibrator:
 
     Args:
       im (np.ndarray): Imagen de entrada sobre la que se realizarán las anotaciones.
-      Si no se proporciona usa ```self.im```.
+      Si no se proporciona usa ``self.im``.
 
     Returns:
       la imagen anotada.

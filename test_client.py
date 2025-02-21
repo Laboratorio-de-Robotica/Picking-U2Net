@@ -8,17 +8,18 @@ La respuesta es una string, este cliente de pruebas no la analiza, la muestra ta
 
 Está pensado para ejecutarse en consola varias veces, cada vez que se quiere obtener una respuesta.
 
-```
-python test-client.py 
-```
+    .. code-block:: bash
+
+        python test-client.py 
 
 envía una solicitud a _localhost_, al puerto por defecto 65432, el mismo elegido para el servidor.
 Útil cuando se ejecuta en la misma máquina que el servidor.
 
 
-```
-python test-client.py -i 192.168.0.101 -p 65432
-```
+    .. code-block:: bash
+
+        python test-client.py -i 192.168.0.101 -p 65432
+
 
 permite elegir IP y puerto destino (los del servidor) 
 y por lo tanto ejecutar este cliente desde otra máquina en la misma red.

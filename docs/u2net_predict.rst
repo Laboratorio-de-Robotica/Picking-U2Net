@@ -5,4 +5,3 @@ u2net\_predict module
    :members:
    :special-members: __init__, __call__
    :undoc-members:
-   :show-inheritance:

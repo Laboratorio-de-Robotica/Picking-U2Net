@@ -1,6 +1,6 @@
-test-client module
+test_client module
 ==================
 
-.. automodule:: test-client
+.. automodule:: test_client
    :members:
    :undoc-members:

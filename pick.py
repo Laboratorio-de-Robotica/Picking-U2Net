@@ -1,9 +1,9 @@
 """
 pick.py es un módulo con una única clase: PickU2Net, que determina puntos de agarre para objetos en una imagen.  Típicamente se importa así:
 
-  ```
-  import PickU2Net from pick
-  ```
+  .. code-block:: python
+
+    import PickU2Net from pick
 
 Usa el modelo U2Net entrenado para segmentar objetos en la imagen de entrada, analiza los contornos y devuelve los puntos de agarre para cada objeto encontrado.
 
@@ -14,9 +14,9 @@ No determina la profundidad.
 
 El módulo se puede ejecutar como script para probarlo con una imagen de ejemplo de esta manera:
 
-  ```
-  python pick.py --input images/imagen_13r.jpeg  --model u2net
-  ```
+  .. code-block:: bash
+
+    python pick.py --input images/imagen_13r.jpeg  --model u2net
 
 Recomendación: en la imagen conviene que el fondo sobresalga por todos los bordes.
 
@@ -44,10 +44,10 @@ class PickU2Net:
 
   Ejemplo de uso:
 
-      ```
-      picking = PickU2Net()
-      results = picking(input_image)
-      ```
+    .. code-block:: python
+
+        picking = PickU2Net()
+        results = picking(input_image)
 
   El método __call__ documenta los resultados devueltos.
 
@@ -189,7 +189,7 @@ class PickU2Net:
 
   def getGrabingPoints(self, contour:np.ndarray, center:tuple[int,int], principalComponent:float)->tuple[tuple[int,int],tuple[int,int]]:
     """
-    Obtiene dos puntos de agarre en un contorno a partir del resultado de ```analyzeContour()```
+    Obtiene dos puntos de agarre en un contorno a partir del resultado de ``analyzeContour()``
     
     Dado un contorno, un baricentro y un componente principal, calcula dos puntos de agarre.
 

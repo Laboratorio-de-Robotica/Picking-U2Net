@@ -14,11 +14,6 @@ jobs:
       pages: write
       id-token: write
     steps:
-    - name: Inject repository link
-      run: |
-        REPO_URL="https://github.com/${{ github.repository }}"
-        echo "html_theme_options = {'github_url': '$REPO_URL'}" >> docs/conf.py
-
     - id: deployment
       uses: sphinx-notes/pages@v3
     - name: Show documentation URL
