@@ -78,6 +78,23 @@ Picking también procesa una imagen y determina los puntos de agarre.  Usa u2net
 <img src="./_static/Picking.png">
 
 
+### Server
+
+    python server.py
+
+En consola informa que el servidor está escuchando en una dirección y puerto.  En otra terminal abrir telnet contra esa dirección y puerto.  Enviar cualquier mensaje (escribir un texto y pulsar ENTER).  El servidor responde con una cadena de ceros, confimando la conexión.  Esa cadena de ceros informa que el servidor no detectó ningún objeto.
+
+Los pasos siguientes son apenas una demo de funcionamiento del sistema; la calibración es ficticia y las coordenadas que se informan no son reales.  Para usarlo hay que proceder a una calibración real y ajuste de coordenadas reales del robot.
+
+Volviendo al servidor, éste abrió una ventana de la cámara.  Hay que seguir estos pasos (nota: las pulsaciones de teclado sólo funcionan si la ventana activa es la de la cámara):
+
+1. apuntar a un patrón de calibración ajedrez de 9x6 (hay uno en la carpeta images)
+2. pulsar **c** para "calibrar": aparecerá una ventana con una vista frontal del patrón, demostrando la homografía.
+3. apuntar objetos con un fondo simple (como los objetos de la mesa del robot), procurando que el fondo llegue a todos los bordes de la imagen
+4. pulsar **d** para "detectar": aparecerán dos imágenes, la segmentación y la anotación de puntos de agarre
+
+En este punto el servidor tiene coordenadas de picking.  De vueltan en telnet, se envía cualquier mensaje y se obtiene la respuesta con coordenadas de picking.  En la Referencia del código se explica cómo se interpretan estas coordenadas en el robot.
+
 ## Estructura del código
 
 - model: carpeta con los modelos u2net y u2netp
