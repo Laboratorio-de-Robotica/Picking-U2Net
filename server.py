@@ -71,22 +71,19 @@ def start_server():
 
         # Bucle infinito para aceptar múltiples conexiones
         while True:
-            # Usamos un timeout para evitar bloqueo completo en accept
-            # Espera recibir datos hasta un segundo, y luego desbloquea con un error de timeout
-            s.settimeout(1.0)
-            try:
-                # accept() bloquea hasta que recibe una consulta
-                # addr contiene la ip de la máquina que realiza la consulta
-                connection, addr = s.accept()
-            except socket.timeout:
-                # Si no hay conexión, seguimos esperando
-                continue
+            # accept() bloquea hasta que recibe una consulta
+            # addr contiene la ip de la máquina que realiza la consulta
+            connection, addr = s.accept()
 
-            with connection:
+            while True:
                 # Conexión establecida, recibir la consulta del cliente, una string que se ignora
-                data = connection.recv(1024)
-                consulta = data.decode()
-                print(f"Consulta: {consulta}")
+                data = connection.recv(1024) # Bloqueante
+
+                if not data:
+                    # el cliente cerró la conexión
+                    break
+
+                print(f"Consulta: {data.decode()}")
 
                 if len(objects)>0:
                     # Responder con las coordenadas de picking
@@ -107,13 +104,14 @@ def start_server():
                     # No hay objetos detectados
                     response = f"(0.0, 0.0, 0.0, 0.0, 0.0)\n"
 
-                connection.sendall(response.encode())
-                print(f"Respuesta: {response}")
+                    connection.sendall(response.encode())
+                    print(f"Respuesta: {response}")
 
-                # Reiniciar la variable de objeto detectado
-                object_detected = False
+                    # Reiniciar la variable de objeto detectado
+                    object_detected = False
 
-                # Respuesta enviada. Conexión cerrada. Esperando nueva conexión...
+            # Conexión cerrada. El siguiente bucle espera nueva conexión.
+            connection.close()
 
 def projectPoint(H, point):
     """
