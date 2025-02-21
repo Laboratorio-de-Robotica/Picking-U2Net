@@ -184,7 +184,20 @@ if __name__ == "__main__":
             key = ord(key)
             if key == 'c':
                 # Calibrar
-                extrinsicCalibrator.calibrate(im)
+                if extrinsicCalibrator.findCorners(im):
+                    extrinsicCalibrator.computeHwc()
+                    print(f"Hwc: {extrinsicCalibrator.Hwc}")
+
+                    Hviz = extrinsicCalibrator.getHviz(scaleFactor=25.0, translation=(5,5))
+                    imFrontal = cv.warpPerspective(im, Hviz, (im.shape[1], im.shape[0]))
+                    cv.imshow('Frontal', imFrontal)
+                    im = extrinsicCalibrator.drawCorners()
+
+                else:
+                    print("No se detectó el patrón")
+
+                cv.imshow('Cam', im)
+
 
             elif key == 'd':
                 # Detectar objetos

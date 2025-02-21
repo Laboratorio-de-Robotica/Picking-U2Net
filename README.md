@@ -1,5 +1,5 @@
 # U2Net para Picking
-<img src="./docs/assets/Picking.png">
+<img src="./docs/_static/Picking.png">
 
 [Documentación en Github Pages](https://laboratorio-de-robotica.github.io/Picking-U2Net/)
 
