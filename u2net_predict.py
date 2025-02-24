@@ -24,7 +24,7 @@ Pruebe también el parámetro --model u2netp para usar el modelo liviano, más r
 
 """
 
-from skimage.transform import resize
+from cv2 import resize
 import torch
 import numpy as np
 
@@ -98,7 +98,8 @@ class U2netModel:
             torch.Tensor: Tensor normalizado de la imagen.
         """
         # resize always casts to float64, astype to float32
-        image = resize(image,(self.output_size,self.output_size),mode='constant').astype(np.float32)
+        #image = resize(image,(self.output_size,self.output_size),mode='constant').astype(np.float32)
+        image = resize(image, (self.output_size,self.output_size)).astype(np.float32)
 
         # elements range 0.0..1.0
         image = image/np.max(image)
@@ -132,7 +133,7 @@ class U2netModel:
             np.ndarray: Imagen de la segmentación en escala de grises, del mismo tamaño que input_image.
         """
         map_np = map_tensor.squeeze().cpu().data.numpy()*255
-        map_image = resize(map_np, input_image.shape[0:2]).astype(np.uint8)
+        map_image = resize(map_np, input_image.shape[1::-1]).astype(np.uint8) # shape es (alto,ancho,canales), se obtiene (ancho,alto)
         return map_image
 
     def predict(self, input_tensor:torch.Tensor):

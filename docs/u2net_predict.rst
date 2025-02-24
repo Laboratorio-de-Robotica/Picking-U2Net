@@ -1,4 +1,4 @@
-u2net\_predict module
+Módulo u2net\_predict
 =====================
 
 .. automodule:: u2net_predict

@@ -1,4 +1,4 @@
-server module
+Módulo server
 =============
 
 .. automodule:: server

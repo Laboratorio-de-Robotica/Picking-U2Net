@@ -43,18 +43,13 @@ El archivo descargado se debe colocar en la carpeta **model**.
 
 ## Dependencias
 
-Esencialmente las dependencias de U2Net; para cada una se muestras dos versiones: las sugeridas por el sitio de U2Net y las usadas en este desarrollo.  Es muy posible que funciones con versiones futuras.
+Esencialmente las dependencias de U2Net; para cada una se muestras dos versiones: las sugeridas por el sitio de U2Net y las usadas en este desarrollo, las actuales a inicios de 2025.  Ambas funcionan y es muy posible que también funcionen con versiones posteriores.
 
 - Python 3.6, 3.12
 - numpy 1.15.2, 1.26.4
-- scikit-image 0.14.0, 0.22.0
 - python-opencv 4.10
-- PyTorch 0.4.0
-- torchvision 0.2.1
-
-Este proyecto se probó exitosamente con la última versión de Torch a inicios de 2025.
-
-*Nota: scikit-image se usa solamente en u2net_predict.py para la función resize().  Se podría evitar esta biblioteca reemplazando por cv2.resize().*
+- PyTorch 0.4.0, 2.6.0
+- torchvision 0.2.1, 0.21.0
 
 ## Demo
 

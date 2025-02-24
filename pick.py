@@ -49,6 +49,7 @@ class PickU2Net:
         picking = PickU2Net()
         results = picking(input_image)
 
+
   El método __call__ documenta los resultados devueltos.
 
   Attributes:
@@ -109,12 +110,11 @@ class PickU2Net:
       area = cv.contourArea(contour)
       if(area<self.minArea or area>self.maxArea):
         # Too small or too big
-        #self.results.append(None)
         continue
 
       # gravity center c, principal component unity vector v
       center, principalComponent = self.analizeContour(contour)
-      grabbingPoint0, grabbingPoint1 = self.getGrabingPoints(contour, center, principalComponent)
+      grabbingPoint0, grabbingPoint1 = self.getGrabbingPoints(contour, center, principalComponent)
       result = SimpleNamespace()
       result.center = center
       result.principalComponent = principalComponent
@@ -185,7 +185,7 @@ class PickU2Net:
       principalComponent = eigenvectors[:, 1]
     return center, principalComponent
 
-  def getGrabingPoints(self, contour:np.ndarray, center:tuple[int,int], principalComponent:float)->tuple[tuple[int,int],tuple[int,int]]:
+  def getGrabbingPoints(self, contour:np.ndarray, center:tuple[int,int], principalComponent:float)->tuple[tuple[int,int],tuple[int,int]]:
     """
     Obtiene dos puntos de agarre en un contorno a partir del resultado de ``analyzeContour()``
     

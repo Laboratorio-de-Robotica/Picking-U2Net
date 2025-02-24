@@ -7,5 +7,6 @@ Referencia de Picking-U2Net
    pick
    u2net_predict
    extrinsics
+   geometricTransforms
    server
    test_client

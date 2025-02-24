@@ -1,4 +1,4 @@
-pick module
+Módulo pick
 ===========
 
 .. automodule:: pick

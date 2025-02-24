@@ -1,4 +1,4 @@
-extrinsics module
+Módulo extrinsics
 =================
 
 .. automodule:: extrinsics

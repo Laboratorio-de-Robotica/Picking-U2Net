@@ -17,9 +17,14 @@ El sistema se controla con teclas:
 - espacio: borrar piezas
 - esc: salir
 
-El servidor se puede probar con un cliente para test que hace el rol del robot.
+El servidor se puede probar con un cliente para test que hace el rol del robot:
 
-En desarrollo, no funcional aún.
+- test_client.py
+- telnet
+
+Para probarlo con telnet, al conectarlo basta enviar cualquier mensaje y 
+el servidor responde con las coordenadas de picking, o todos ceros si no tiene una pieza lista.
+
 '''
 
 import socket
@@ -28,15 +33,16 @@ import cv2 as cv
 import numpy as np
 from pick import PickU2Net
 from lib.extrinsics import ExtrinsicCalibrator
+import lib.geometricTransforms as gt
 
-def get_my_ip_address(test="8.8.8.8"):
+def get_my_ip_address(test:str="8.8.8.8")->str:
     """
     Releva el nº de IP de la propia máquina.
 
     Para eso abre un socket contra un nº de IP (por defecto un dns de Google).
 
     Returns:
-        (string) ip de la propia máquina
+        ip de la propia máquina
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     myIP = ""
@@ -92,8 +98,8 @@ def start_server():
                     
                     # Proyectar las coordenadas con H, y luego calcular el centro y el ángulo
                     # La apertura se informa en mm, la mayoría de las aplicaciones del robot no la usan
-                    p0 = projectPoint(extrinsicCalibrator.Hwc, object.grabbingPoint0)
-                    p1 = projectPoint(extrinsicCalibrator.Hwc, object.grabbingPoint1)
+                    p0 = gt.projectPoint(extrinsicCalibrator.Hwc, object.grabbingPoint0)
+                    p1 = gt.projectPoint(extrinsicCalibrator.Hwc, object.grabbingPoint1)
                     center = (p0 + p1) / 2
                     angle = np.arctan2(p1[1] - p0[1], p1[0] - p0[0]) * 360.0 / (2.0 * np.pi)
                     aperture = np.linalg.norm(p1 - p0)
@@ -111,38 +117,13 @@ def start_server():
             # Conexión cerrada. El siguiente bucle espera nueva conexión.
             connection.close()
 
-def projectPoint(H, point):
-    """
-    Proyecta un punto usando la homografía.
-
-    #. Expande el punto dado a coordenadas homogéneas en el espacio proyectivo asociado
-    #. Lo proyecta con la transformación lineal H
-    #. Normaliza el resultado y lo reduce a 2 dimensiones devolviéndolo al espacio vectorial
-
-    Args:
-        H: homografía, matriz de 3x3
-        point: punto 2D
-
-    Returns:
-        punto 2D proyectado
-    """
-
-    # Proyectar el punto con la homografía
-    p = np.array([point[0], point[1], 1.0])
-    p = np.dot(H, p)
-    p = p / p[2]
-    return p[0:2]
-
 if __name__ == "__main__":
     print('''
     Servidor TCP/IP para comunicación con robot de picking.
     El servidor recibe consultas del robot y responde con las coordenadas de picking.
-    Preparacón:
-        - Calibrar extrínsecamente la cámara con un patrón ajedrez de 9x6 casillas (con la tecla C)
-        - Detectar la posición de las piezas con la tecla D
 
     Teclas:
-        C: Calibrar extrínsecamente (computa la homografía)
+        C: Calibrar extrínsecamente (computa la homografía) con un patrón ajedrez de 9x6 casillas
         D: Detectar la posición de la pieza
         espacio: Borrar las detecciones
         ESC: Salir del bucle
@@ -180,11 +161,9 @@ if __name__ == "__main__":
             # busca el patrón ajedrez
             pattern_detected = extrinsicCalibrator.findCorners(im)
             if pattern_detected:
-                im = extrinsicCalibrator.drawCorners()
+                im = extrinsicCalibrator.drawCorners(im)
 
         cv.imshow('Camara', im)
-
-
 
         # Pausa pequeña para permitir que el servidor siga atendiendo consultas
         key = cv.waitKey(100)
@@ -201,12 +180,12 @@ if __name__ == "__main__":
         elif key == 'c':
             # Calibrar
             if pattern_detection_state and pattern_detected:
-                extrinsicCalibrator.computeHwc()
-                print(f"Hwc: \n{extrinsicCalibrator.Hwc}")
+                Hwc = extrinsicCalibrator.computeHwc()
+                print(f"Hwc: \n{Hwc}")
                 pattern_detection_state = False
 
                 # Homografía para visualización: los argumentos de getHviz son arbitrarios y se deberían ajustar al caso particular
-                Hviz = extrinsicCalibrator.getHviz(scaleFactor=25.0, translation=(5,5))
+                Hviz = gt.similarityTransform2D(scaleFactor=25.0, translation=(320,240), H=Hwc)
                 imFrontal = cv.warpPerspective(im, Hviz, (im.shape[1], im.shape[0]))
 
                 cv.imshow('Frontal', imFrontal)

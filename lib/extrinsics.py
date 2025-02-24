@@ -50,10 +50,8 @@ class ExtrinsicCalibrator:
     self.distCoeffs = distCoeffs
     self.chessboardPointCloud3D = np.zeros((self.chessBoard[0]*self.chessBoard[1],3), np.float32)
     self.chessboardPointCloud3D[:,:2] = np.mgrid[0:self.chessBoard[0],0:self.chessBoard[1]].T.reshape(-1,2)
-    self.Hwc = np.eye(3)
-    self.Hviz = self.Hwc
 
-  def findCorners(self, im):
+  def findCorners(self, im:np.ndarray)->bool:
     """
     Detecta las esquinas del patrón de calibración ajedrez en la imagen, con precisión subpíxel.
 
@@ -68,15 +66,6 @@ class ExtrinsicCalibrator:
       chessboardFound flag
 
     """
-    if im is None:
-      return
-    
-    self.im = im
-    #self.Hwc = None
-    self.tvecs = None
-    self.rvecs = None
-    self.Tcw = None
-    
     self.imGray = cv.cvtColor(im, cv.COLOR_BGR2GRAY)
     self.chessboardFound, corners = cv.findChessboardCorners(self.imGray, self.chessBoard, None)
     if self.chessboardFound:
@@ -86,25 +75,22 @@ class ExtrinsicCalibrator:
     self.corners = corners
     return self.chessboardFound
   
-  def drawCorners(self, im=None):
+  def drawCorners(self, im:np.ndarray)->np.ndarray:
     """
     Anota las esquinas del patrón ajedrez en la imagen.
 
     Args:
       im (np.ndarray): Imagen de entrada sobre la que se realizarán las anotaciones.
-      Si no se proporciona usa ``self.im``.
 
     Returns:
       la imagen anotada.
 
     """
-    if im is None:
-       im = self.im
     if self.chessboardFound:
       cv.drawChessboardCorners(im, self.chessBoard, self.corners, self.chessboardFound)
     return im
   
-  def computeHwc(self):
+  def computeHwc(self)->np.ndarray | None:
     """
     Computa la homografía entre las esquinas del patrón en la imagen 
     y las coordenadas 3D de esas esquinas en el patrón.
@@ -119,36 +105,10 @@ class ExtrinsicCalibrator:
     if not self.chessboardFound:
       return None
     
-    self.Hwc, _ = cv.findHomography(self.corners, self.chessboardPointCloud3D)
-    return self.Hwc
+    Hwc, _ = cv.findHomography(self.corners, self.chessboardPointCloud3D)
+    return Hwc
 
-  def getHviz(self, scaleFactor=1.0, translation=(0,0)):
-    """
-    Computa una homografía alternativa, específica para visualización, 
-    que produce una vista cenital.
-
-    Tiene una escala diferente y el origen colocado en un punto más conveniente.
-
-    Args:
-      scaleFactor: factor de escala.  Si la escala métrica está en cm, un píxel por cm puede ser poco, esto se puede cambiar con el factor de escala.
-      translation: el sistema de referencia del robot tiene excursión simétrica, con coordenadas negativas y positicas, de modo que el origen está en el medio.
-      la visualización no muestra coordenadas negativas, por lo que conviene mover el origen a un lugar más adecuado.
-
-    Returns:
-      Hviz, la homografía para visualización
-    """
-
-    if self.Hwc is None:
-      return None
-    
-    Htransform = np.identity(3)
-    Htransform[:2, 2] = translation	# t es el vector traslación del origen
-    Htransform[2, 2] = 1/scaleFactor	# k es el factor de escala
-    self.Hviz = Htransform @ self.Hwc
-    return self.Hviz
-
-
-  def computePose(self):
+  def computePose(self)->tuple[np.ndarray, np.ndarray, np.ndarray] | tuple[None, None, None]:
     """
     De la homografía extrae la pose 3D y la expresa de dos maneras:
     
@@ -162,23 +122,27 @@ class ExtrinsicCalibrator:
 
     """
     if self.cameraMatrix is None:
+       print('Sin la matriz intrínseca de la cámara no se puede calcular la pose.')
        return None, None, None
     
     if not self.chessboardFound:
+      print('No se detectó el patrón y no se puede calcular la pose.')
       return None, None, None
  
-    retval, self.rvecs, self.tvecs = cv.solvePnP(self.chessboardPointCloud3D, self.corners, self.cameraMatrix, self.distCoeffs)
+    retval, rvecs, tvecs = cv.solvePnP(self.chessboardPointCloud3D, self.corners, self.cameraMatrix, self.distCoeffs)
     if not retval:
+      print('solvePnP falló en calcular la pose.')
       return None, None, None
 
-    Rcw, _ = cv.Rodrigues(self.rvecs)
-    self.Tcw = np.hstack((Rcw, self.tvecs))
-    self.Tcw = np.vstack((self.Tcw, [0,0,0,1]))
+    Rcw, _ = cv.Rodrigues(rvecs)
+    Tcw = np.hstack((Rcw, tvecs))
+    Tcw = np.vstack((Tcw, [0,0,0,1]))
 
-    return self.rvecs, self.tvecs, self.Tcw
+    return rvecs, tvecs, Tcw
     
 
 if(__name__ == '__main__'):
+  import geometricTransforms as gt
   print("""
         Usage:
         SPACE: compute H and pose
@@ -207,7 +171,6 @@ if(__name__ == '__main__'):
       [0.0, f, cy],
       [0.0, 0.0, 1.0]], np.float32)
 
-  #calibrator = ExtrinsicCalibrator() # don't use cameraMatrix
   calibrator = ExtrinsicCalibrator(cameraMatrix=cameraMatrix) # use fake cameraMatrix
 
   while True:
@@ -215,8 +178,10 @@ if(__name__ == '__main__'):
     if ret:
       imLowRes = cv.resize(im, newSize)
       if calibrator.findCorners(imLowRes):
-        calibrator.computeHwc()
-        Hviz = calibrator.getHviz(scaleFactor=25.0, translation=(5,5))
+        Hwc = calibrator.computeHwc()
+
+        # Transformación arbitraria para visualización
+        Hviz = gt.scaleAndTranslateH(Hwc, scaleFactor=25.0, translation=(5,5))
         imFrontal = cv.warpPerspective(imLowRes, Hviz, (im.shape[1], im.shape[0]))
         cv.imshow('Frontal', imFrontal)
         imLowRes = calibrator.drawCorners()
@@ -232,16 +197,17 @@ if(__name__ == '__main__'):
           # Calcula parámetros extrínsecos
           calibrator.findCorners(im)
           if not calibrator.chessboardFound:
+            print('No se detectó el patrón')
             continue
-          calibrator.computeHwc()
-          calibrator.computePose()
+          Hwc = calibrator.computeHwc()
+          rvecs, tvecs, Tcw = calibrator.computePose()
 
           # Muestra resultados
           np.set_printoptions(precision=2, suppress=True)
-          print("Matriz Hwc", calibrator.Hwc)
-          print("rvecs", calibrator.rvecs)
-          print("tvecs", calibrator.tvecs)
-          print("Tcw", calibrator.Tcw)
+          print("Matriz Hwc", Hwc)
+          print("rvecs", rvecs)
+          print("tvecs", tvecs)
+          print("Tcw", Tcw)
           np.set_printoptions(**defaultPrintOptions)
 
         case 'v':
