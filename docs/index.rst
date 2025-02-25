@@ -1,3 +1,6 @@
+Picking U2Net
+=============
+
 .. toctree::
   :maxdepth: 4
   :caption: Contenido
@@ -9,3 +12,5 @@
   geometricTransforms
   server
   test_client
+
+.. note:: `Repositorio en GitHub <https://github.com/Laboratorio-de-Robotica/Picking-U2Net>`_
