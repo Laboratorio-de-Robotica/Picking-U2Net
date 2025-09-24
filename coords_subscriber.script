@@ -1,0 +1,67 @@
+'''
+Biblioteca URScript de suscripción al publicador de coordenadas.
+Funciona en el robot UR5e, para ser usada desde URP.
+'''
+
+socket = "coords socket"
+
+def init(ip, port, howManyCoords):
+  '''
+  Inicializa la suscripción al publicador de coordenadas
+
+  Parameters:
+    ip: dirección IP del publicador de coordenadas
+    port: puerto del publicador de coordenadas
+    howManyCoords: número de coordenadas a recibir en cada mensaje
+
+  Returns:
+    True si la inicialización fue exitosa, el único valor posible
+  '''
+
+  global numCoords
+  numCoords = howManyCoords
+
+  success = False
+  while !success:
+    success = socket_open(ip, port, socket)
+    if not success:
+      popup("No se pudo conectar al publicador de coordenadas.  Cierre este mensaje para reintentar.", "Error de conexión", blocking=True)
+
+end
+
+def read(blocking=True):
+  '''
+  Lee las coordenadas enviadas por el publicador de coordenadas.
+
+  Parameters:
+    blocking: si es True, la función esperará hasta recibir coordenadas válidas.
+              si es False, la función devolverá inmediatamente, con un array vacío si no se recibieron coordenadas o no son válidas.
+
+  Returns:
+    array con las 4 coordenadas [x, y, alfa, apertura],
+    o un array vacío si no se recibieron coordenadas o no son válidas, algo que no sucede con blocking = True
+  '''
+  while True:
+    data = socket_read_ascii_float(4, socket)
+    if data[0] == 4:
+      # coordenadas recibidas correctamente
+      return [data[1], data[2], data[3], data[4]]
+    elif blocking == False:
+      # Salir sin éxito
+      return False
+    else:
+      # Mostrar mensaje de error y reintentar
+      popup_text = "No se recibieron coordenadas válidas del publicador de coordenadas.\nLos valores recibidos son:\n"
+      for i in data:
+        popup_text = popup_text + to_str(i) + ", "
+      end
+      popup(popup_text, "Error de recepción", blocking=True)
+    end
+end
+
+def idle():
+  '''
+  Avisa al publicador que el robot está inactivo y listo para recibir nuevas coordenadas.
+  '''
+  socket_send_line("IDLE", socket)
+end

@@ -1,0 +1,20 @@
+# URP es un lenguaje gráfico, no tiene versión de texto
+# Lo que sigue es un pseudocódigo para programar directamente sobre el teach pendant
+
+BeforeStart
+  init("192.168.0.101", 65432, 4) # chequear la ip del servidor
+
+Robot Program
+  # El robot inicia en la posición de reposo
+  idle()
+  coords = read()
+
+  # Aquí hay que construir targetPos a partir de coords
+  # ...
+
+ 	MoveJ targetPos
+
+  # En este punto se puede desarrollar el movimiento específico de picking
+  # incluyendo la operación del gripper
+  # seguido del traslado de la pieza a destino donde la deja
+  # finalizando con un movimiento a la zona de espera
